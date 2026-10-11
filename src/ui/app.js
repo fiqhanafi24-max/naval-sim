@@ -270,6 +270,7 @@ function renderPanels(force = false) {
         ${!o.dead && asm.length ? `<div class="act">
           <button class="fire" data-fire="2" data-target="${c.id}">Fire 2 × ${asm[0].item.split(" ")[0]}</button>
           <button class="fire" data-fire="4" data-target="${c.id}">Fire 4</button>
+          <button class="fire" data-group="4" data-target="${c.id}" title="Every ship in range fires 4, so they arrive together">All ships: 4 each</button>
         </div>` : ""}
       </div>`).join("");
     if ($("oGo")) {
@@ -295,10 +296,17 @@ $("unitList").addEventListener("click", (ev) => {
 });
 
 $("detail").addEventListener("click", (ev) => {
-  const b = ev.target.closest("button[data-fire]");
+  const b = ev.target.closest("button[data-fire], button[data-group]");
   if (!b) return;
   const o = world.get(selectedId);
-  const res = world.orderSalvo(o, Number(b.dataset.target), Number(b.dataset.fire));
+  const target = Number(b.dataset.target);
+  if (b.dataset.group) {
+    const res = world.orderGroupSalvo(PLAYER, target, Number(b.dataset.group));
+    if (!res.ok) world.log(PLAYER, `Cannot fire: ${res.reason}`, "info");
+    else world.log(PLAYER, `Coordinated attack: ${res.ships} ships firing`, "launch");
+    return;
+  }
+  const res = world.orderSalvo(o, target, Number(b.dataset.fire));
   if (!res.ok) world.log(PLAYER, `${o.name}: cannot fire, ${res.reason}`, "info");
 });
 

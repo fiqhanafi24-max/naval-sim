@@ -15,17 +15,21 @@ import sys
 # (ship class, platform setup name)
 SHIPS = [
     ("Arleigh Burke DDGHM", "Burke 2008"),
+    ("Ticonderoga CG Baseline 4", "Tico B4 2008"),
     ("Oliver Hazard Perry FFGHM", "Oliver Hazard Perry 2008"),
-    ("Pr 956 Sarych", "Pr 956 1992"),
-    ("Pr 1155 Fregat", "Pr 1155 1992"),
+    ("Pr 956 Sarych", "Pr 956 2007"),
+    ("Pr 1155 Fregat", "Pr 1155 2007"),
 ]
 
-# Extra items to give VLS cells (GCB models each Mk-41 cell as a separate
-# launcher fed from a magazine; we flatten that to one launcher with a count).
-VLS_OVERRIDES = {
-    "Arleigh Burke DDGHM": {"0": ("RIM-66M", 32), "1": ("RIM-162A", 24), "2": None},
+# Magazine contents per launcher id, replacing the setup's loadout. GCB models each Mk-41
+# cell (and the Mk-13 arm) as a launcher reloaded from a magazine; we flatten that to one
+# launcher holding counts of one or more weapon types that share its reload cycle.
+MAGAZINE_OVERRIDES = {
+    "Arleigh Burke DDGHM": {"0": [("RIM-66M", 32)], "1": [("RIM-162A", 24)], "2": None},
+    # two 61-cell Mk-41s; the remaining cells hold Tomahawks, which aren't ported yet
+    "Ticonderoga CG Baseline 4": {"0": [("RIM-66M", 60)], "1": [("RIM-162A", 32)], "2": None},
     # Mk-13 single-arm launcher fed from a 40-round magazine (36 SM-1MR + 4 Harpoon)
-    "Oliver Hazard Perry FFGHM": {"0": ("RIM-66L", 36), "1": ("RGM-84F Harpoon", 4), "2": None},
+    "Oliver Hazard Perry FFGHM": {"2": [("RIM-66L", 36), ("RGM-84F Harpoon", 4)]},
 }
 
 
@@ -184,9 +188,9 @@ def main(db_path, out_path):
     for cls, setup_name in SHIPS:
         s = one(db, "select * from ship where DatabaseClass=?", cls)
         setup = one(db, "select * from platform_setup where DatabaseClass=? and SetupName=?", cls, setup_name)
-        loadout = {str(r["LauncherId"]): (r["Item"], int(r["Quantity"]))
+        loadout = {str(r["LauncherId"]): [(r["Item"], int(r["Quantity"]))]
                    for r in rows(db, "select * from launcher_loadout where DatabaseClass=?", setup["LauncherLoadout"])}
-        loadout.update({k: v for k, v in VLS_OVERRIDES.get(cls, {}).items()})
+        loadout.update(MAGAZINE_OVERRIDES.get(cls, {}))
 
         sensors = []
         for ps in rows(db, "select * from platform_sensor where DatabaseClass=?", cls):
@@ -197,26 +201,35 @@ def main(db_path, out_path):
 
         launchers = []
         for pl in rows(db, "select * from platform_launcher where DatabaseClass=? order by LauncherId", cls):
-            item = loadout.get(str(pl["LauncherId"]))
-            if not item or not export_missile(db, item[0], data):
-                continue  # guns, torpedoes, empty cells: not ported yet
-            if any(seg["guidMode"] == 3 for seg in data["missiles"][item[0]]["profile"]):
-                continue  # payload-deploying weapons (e.g. ASW rockets): not ported yet
-            fc = pl["FireControlSensor"] or None
-            if fc and fc not in data["radars"]:
-                fc = None
-            if fc is None and data["missiles"][item[0]]["needsFireControl"]:
-                # fall back to the first fire-control radar on the ship
-                fc = next((x["name"] for x in sensors
-                           if data["radars"][x["name"]]["maxFireControlTracks"] > 0), None)
-            launchers.append({
-                "id": int(pl["LauncherId"]),
-                "description": pl["Description"],
-                "item": item[0], "count": item[1],
-                "firingArc_deg": num(pl["FiringArc_deg"]), "az_deg": num(pl["Az"]),
-                "el_deg": num(pl["El"]),
-                "fireControl": fc,
-            })
+            for item in loadout.get(str(pl["LauncherId"])) or []:
+                if not export_missile(db, item[0], data):
+                    continue  # guns, torpedoes, empty cells: not ported yet
+                if any(seg["guidMode"] == 3 for seg in data["missiles"][item[0]]["profile"]):
+                    continue  # payload-deploying weapons (e.g. ASW rockets): not ported yet
+                fc = pl["FireControlSensor"] or None
+                if fc and fc not in data["radars"]:
+                    fc = None
+                if fc is None and data["missiles"][item[0]]["needsFireControl"]:
+                    # fall back to the first fire-control radar on the ship
+                    fc = next((x["name"] for x in sensors
+                               if data["radars"][x["name"]]["maxFireControlTracks"] > 0), None)
+                # time between shots: single-round launchers (Mk-13, VLS cells) reload from the
+                # magazine before every shot; multi-round launchers just cycle
+                lc = one(db, "select * from launcher_configuration where DatabaseClass=? and ChildClass=?",
+                         pl["LauncherClass"], item[0])
+                cycle_s = 2.0
+                if lc:
+                    cycle_s = num(lc["CycleTime_s"], 2)
+                    if int(num(lc["ChildCapacity"], 1)) == 1:
+                        cycle_s += num(lc["LoadTime_s"])
+                launchers.append({
+                    "id": int(pl["LauncherId"]),  # entries with the same id share one launcher arm
+                    "description": pl["Description"],
+                    "item": item[0], "count": item[1], "cycle_s": round(cycle_s, 2),
+                    "firingArc_deg": num(pl["FiringArc_deg"]), "az_deg": num(pl["Az"]),
+                    "el_deg": num(pl["El"]),
+                    "fireControl": fc,
+                })
 
         export_signature(db, s["RCS_Model"], data["signatures"])
         export_damage_effect(db, s["DamageEffect"], data)

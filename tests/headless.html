@@ -121,12 +121,10 @@ check("Damage table interpolates", Math.abs(damageFactor([[0, 0], [10, 1]], 5) -
   let ordered = false;
   for (let i = 0; i < 36000 && !w.over; i++) {
     w.step(0.1);
-    if (!ordered && w.tracks.blue.size >= 2) {
-      const [ddg, ffg] = w.ships("blue");
-      const targets = [...w.tracks.blue.values()].filter((t) => t.kind === "ship");
-      w.orderSalvo(ddg, targets[0].id, 4);
-      w.orderSalvo(ffg, targets[1].id, 4);
-      ordered = true;
+    if (!ordered && w.tracks.blue.size >= 3) {
+      // coordinated attack on a Sovremenny, the ships carrying anti-ship missiles
+      const target = [...w.tracks.blue.values()].find((t) => t.className === "Pr 956 Sarych");
+      ordered = w.orderGroupSalvo("blue", target.id, 4).ok;
     }
   }
   const fmt = (o) => `${o.name} ${(o.damage * 100).toFixed(0)}%${o.dead ? " SUNK" : ""}`;
@@ -135,7 +133,10 @@ check("Damage table interpolates", Math.abs(damageFactor([[0, 0], [10, 1]], 5) -
   const count = (re) => w.events.filter((e) => re.test(e.text)).length;
   const asmFired = w.events.reduce((n, e) => n + Number((e.text.match(/fired (\d+) x/) || [0, 0])[1]), 0);
   const samsFired = count(/engaging inbound missile/);
-  check("Both blue Harpoon salvos launch (no 'salvo stopped')", count(/salvo stopped/) === 0 && asmFired >= 8, `${asmFired} anti-ship missiles fired in total`);
+  check("Blue's coordinated attack launches from all three ships (no 'salvo stopped')", count(/salvo stopped/) === 0 && count(/^USS .* fired \d+ x/) === 3, `${asmFired} anti-ship missiles fired in total`);
+  // balance is a scenario-design question, not a physics check: report it rather than pass/fail
+  const intercepts = count(/intercepted/);
+  lines.push(`INFO Scenario outcome: ${all.filter((o) => o.damage > 0).map(fmt).join("; ") || "no ship damaged"}; ${intercepts} missiles intercepted`);
   check("SAM expenditure is reasonable (at most 4 per inbound missile)", samsFired <= 4 * asmFired, `${samsFired} SAMs vs ${asmFired} anti-ship missiles`);
   check("No intel contact is re-announced every report", count(/New contact/) <= 8, `${count(/New contact/)} 'New contact' events`);
   results.events = w.events.map((e) => `${(e.t / 60).toFixed(1).padStart(5)}m [${e.side}] ${e.text}`);

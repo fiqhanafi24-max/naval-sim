@@ -39,6 +39,7 @@
      "description": "VLS",
      "item": "RIM-66M",
      "count": 32,
+     "cycle_s": 1.0,
      "firingArc_deg": 0.0,
      "az_deg": 0.0,
      "el_deg": 90.0,
@@ -49,6 +50,7 @@
      "description": "VLS",
      "item": "RIM-162A",
      "count": 24,
+     "cycle_s": 1.0,
      "firingArc_deg": 0.0,
      "az_deg": 0.0,
      "el_deg": 90.0,
@@ -59,6 +61,7 @@
      "description": "Stbd Harpoon Launcher",
      "item": "RGM-84F Harpoon",
      "count": 4,
+     "cycle_s": 3.0,
      "firingArc_deg": 0.0,
      "az_deg": 90.0,
      "el_deg": 40.0,
@@ -69,6 +72,90 @@
      "description": "Port harpoon launcher",
      "item": "RGM-84F Harpoon",
      "count": 4,
+     "cycle_s": 3.0,
+     "firingArc_deg": 0.0,
+     "az_deg": 270.0,
+     "el_deg": 40.0,
+     "fireControl": null
+    }
+   ]
+  },
+  "Ticonderoga CG Baseline 4": {
+   "name": "Ticonderoga CG Baseline 4",
+   "country": "USA",
+   "setup": "Tico B4 2008",
+   "maxSpeed_kts": 32.5,
+   "accel_ktsps": 0.171944594,
+   "turnRate_degps": 1.404238906,
+   "length_m": 173.0,
+   "beam_m": 16.8,
+   "draft_m": 10.2,
+   "rcs_dBsm": 49.518,
+   "rcsModel": "ShipRCS1",
+   "effectiveHeight_m": 11.5,
+   "damageEffect": "Ticonderoga CG Baseline 1 durability",
+   "sensors": [
+    {
+     "name": "Phalanx FC",
+     "mountAz_deg": 0.0
+    },
+    {
+     "name": "SPG-62 16",
+     "mountAz_deg": 0.0
+    },
+    {
+     "name": "SPS-49(v)7",
+     "mountAz_deg": 0.0
+    },
+    {
+     "name": "SPS-55",
+     "mountAz_deg": 0.0
+    },
+    {
+     "name": "SPY-1B",
+     "mountAz_deg": 0.0
+    }
+   ],
+   "launchers": [
+    {
+     "id": 0,
+     "description": "VLS",
+     "item": "RIM-66M",
+     "count": 60,
+     "cycle_s": 1.0,
+     "firingArc_deg": 360.0,
+     "az_deg": 0.0,
+     "el_deg": 90.0,
+     "fireControl": "SPG-62 16"
+    },
+    {
+     "id": 1,
+     "description": "VLS",
+     "item": "RIM-162A",
+     "count": 32,
+     "cycle_s": 1.0,
+     "firingArc_deg": 360.0,
+     "az_deg": 0.0,
+     "el_deg": 90.0,
+     "fireControl": "SPG-62 16"
+    },
+    {
+     "id": 5,
+     "description": "stbd harpoon launcher",
+     "item": "RGM-84F Harpoon",
+     "count": 4,
+     "cycle_s": 3.0,
+     "firingArc_deg": 0.0,
+     "az_deg": 90.0,
+     "el_deg": 40.0,
+     "fireControl": null
+    },
+    {
+     "id": 6,
+     "description": "port harpoon launcher",
+     "item": "RGM-84F Harpoon",
+     "count": 4,
+     "cycle_s": 3.0,
      "firingArc_deg": 0.0,
      "az_deg": 270.0,
      "el_deg": 40.0,
@@ -110,23 +197,25 @@
    ],
    "launchers": [
     {
-     "id": 0,
-     "description": "Aft 20mm Phalanx CIWS",
+     "id": 2,
+     "description": "Fwd MK-13 Mod4 Single Arm Missile Launcher",
      "item": "RIM-66L",
      "count": 36,
-     "firingArc_deg": 350.0,
-     "az_deg": 180.0,
-     "el_deg": 0.0,
+     "cycle_s": 7.64,
+     "firingArc_deg": 300.0,
+     "az_deg": 0.0,
+     "el_deg": 40.0,
      "fireControl": "Mk-92 STIR Mod6"
     },
     {
-     "id": 1,
-     "description": "Fwd 76mm Deck Gun",
+     "id": 2,
+     "description": "Fwd MK-13 Mod4 Single Arm Missile Launcher",
      "item": "RGM-84F Harpoon",
      "count": 4,
-     "firingArc_deg": 320.0,
-     "az_deg": 180.0,
-     "el_deg": 0.0,
+     "cycle_s": 7.64,
+     "firingArc_deg": 300.0,
+     "az_deg": 0.0,
+     "el_deg": 40.0,
      "fireControl": null
     }
    ]
@@ -134,7 +223,7 @@
   "Pr 956 Sarych": {
    "name": "Pr 956 Sarych",
    "country": "Russia",
-   "setup": "Pr 956 1992",
+   "setup": "Pr 956 2007",
    "maxSpeed_kts": 32.0,
    "accel_ktsps": 0.05193127,
    "turnRate_degps": 1.674494115,
@@ -161,6 +250,7 @@
      "description": "fwd 9M317 launcher",
      "item": "9M38M1",
      "count": 22,
+     "cycle_s": 7.0,
      "firingArc_deg": 300.0,
      "az_deg": 0.0,
      "el_deg": 40.0,
@@ -171,6 +261,7 @@
      "description": "Aft 9M317 launcher",
      "item": "9M38M1",
      "count": 22,
+     "cycle_s": 7.0,
      "firingArc_deg": 270.0,
      "az_deg": 180.0,
      "el_deg": 40.0,
@@ -181,6 +272,7 @@
      "description": "fwd 3M80 launcher",
      "item": "3M80M Moskit-M",
      "count": 8,
+     "cycle_s": 0.5,
      "firingArc_deg": 0.0,
      "az_deg": 0.0,
      "el_deg": 20.0,
@@ -191,7 +283,7 @@
   "Pr 1155 Fregat": {
    "name": "Pr 1155 Fregat",
    "country": "Russia",
-   "setup": "Pr 1155 1992",
+   "setup": "Pr 1155 2007",
    "maxSpeed_kts": 29.5,
    "accel_ktsps": 0.111125096,
    "turnRate_degps": 1.431456475,
@@ -218,6 +310,7 @@
      "description": "VLS",
      "item": "9M330 Kinzhal",
      "count": 64,
+     "cycle_s": 1.0,
      "firingArc_deg": 0.0,
      "az_deg": 0.0,
      "el_deg": 90.0,
@@ -381,6 +474,94 @@
    "detectsMissile": false,
    "detectsGround": false
   },
+  "SPG-62 16": {
+   "name": "SPG-62 16",
+   "refRange_km": 83.0,
+   "maxRange_km": 300.0,
+   "fov_deg": 360.0,
+   "minEl_deg": 0.0,
+   "maxEl_deg": 87.0,
+   "scanPeriod_s": 1.0,
+   "isSemiactive": false,
+   "isSurveillance": false,
+   "maxFireControlTracks": 16,
+   "blindSpeed_mps": 2.5,
+   "lookdownWater_dB": -3.0,
+   "lookdownLand_dB": -12.0,
+   "elBeamwidth_deg": 0.5,
+   "rangeError": 0.0002,
+   "angleError_deg": 0.0045,
+   "detectsSurface": true,
+   "detectsAir": true,
+   "detectsMissile": true,
+   "detectsGround": true
+  },
+  "SPS-49(v)7": {
+   "name": "SPS-49(v)7",
+   "refRange_km": 158.5,
+   "maxRange_km": 486.0,
+   "fov_deg": 360.0,
+   "minEl_deg": 0.0,
+   "maxEl_deg": 30.0,
+   "scanPeriod_s": 10.0,
+   "isSemiactive": false,
+   "isSurveillance": true,
+   "maxFireControlTracks": 4,
+   "blindSpeed_mps": 2.5,
+   "lookdownWater_dB": -3.0,
+   "lookdownLand_dB": -12.0,
+   "elBeamwidth_deg": 9.9,
+   "rangeError": 0.0,
+   "angleError_deg": 0.17,
+   "detectsSurface": false,
+   "detectsAir": true,
+   "detectsMissile": true,
+   "detectsGround": false
+  },
+  "SPS-55": {
+   "name": "SPS-55",
+   "refRange_km": 6.025,
+   "maxRange_km": 67.5,
+   "fov_deg": 360.0,
+   "minEl_deg": 0.0,
+   "maxEl_deg": 20.0,
+   "scanPeriod_s": 3.75,
+   "isSemiactive": false,
+   "isSurveillance": true,
+   "maxFireControlTracks": 4,
+   "blindSpeed_mps": 2.5,
+   "lookdownWater_dB": -3.0,
+   "lookdownLand_dB": -12.0,
+   "elBeamwidth_deg": 20.0,
+   "rangeError": 0.0,
+   "angleError_deg": 0.08,
+   "detectsSurface": true,
+   "detectsAir": false,
+   "detectsMissile": false,
+   "detectsGround": true
+  },
+  "SPY-1B": {
+   "name": "SPY-1B",
+   "refRange_km": 204.42,
+   "maxRange_km": 324.0,
+   "fov_deg": 360.0,
+   "minEl_deg": 0.0,
+   "maxEl_deg": 90.0,
+   "scanPeriod_s": 5.0,
+   "isSemiactive": false,
+   "isSurveillance": true,
+   "maxFireControlTracks": 16,
+   "blindSpeed_mps": 2.5,
+   "lookdownWater_dB": -3.0,
+   "lookdownLand_dB": -12.0,
+   "elBeamwidth_deg": 1.7,
+   "rangeError": 0.0,
+   "angleError_deg": 0.09,
+   "detectsSurface": true,
+   "detectsAir": true,
+   "detectsMissile": true,
+   "detectsGround": true
+  },
   "Mk-92 STIR Mod6": {
    "name": "Mk-92 STIR Mod6",
    "refRange_km": 47.368,
@@ -424,28 +605,6 @@
    "detectsAir": true,
    "detectsMissile": true,
    "detectsGround": false
-  },
-  "SPS-55": {
-   "name": "SPS-55",
-   "refRange_km": 6.025,
-   "maxRange_km": 67.5,
-   "fov_deg": 360.0,
-   "minEl_deg": 0.0,
-   "maxEl_deg": 20.0,
-   "scanPeriod_s": 3.75,
-   "isSemiactive": false,
-   "isSurveillance": true,
-   "maxFireControlTracks": 4,
-   "blindSpeed_mps": 2.5,
-   "lookdownWater_dB": -3.0,
-   "lookdownLand_dB": -12.0,
-   "elBeamwidth_deg": 20.0,
-   "rangeError": 0.0,
-   "angleError_deg": 0.08,
-   "detectsSurface": true,
-   "detectsAir": false,
-   "detectsMissile": false,
-   "detectsGround": true
   },
   "MR-700A Fregat AS/SS": {
    "name": "MR-700A Fregat AS/SS",
@@ -1553,6 +1712,346 @@
     [
      8192.0,
      10.89055
+    ]
+   ]
+  },
+  "Ticonderoga CG Baseline 1 durability": {
+   "blast": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     2.78,
+     0.0
+    ],
+    [
+     2.94,
+     0.1
+    ],
+    [
+     3.41,
+     0.2
+    ],
+    [
+     4.2,
+     0.3
+    ],
+    [
+     5.3,
+     0.4
+    ],
+    [
+     6.71,
+     0.5
+    ],
+    [
+     8.44,
+     0.6
+    ],
+    [
+     10.48,
+     0.7
+    ],
+    [
+     12.84,
+     0.8
+    ],
+    [
+     15.51,
+     0.9
+    ],
+    [
+     18.5,
+     1.0
+    ],
+    [
+     23.31,
+     2.0
+    ]
+   ],
+   "waterBlast": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     102.914,
+     0.04
+    ],
+    [
+     117.035,
+     0.042
+    ],
+    [
+     133.024,
+     0.043
+    ],
+    [
+     151.121,
+     0.045
+    ],
+    [
+     171.592,
+     0.048
+    ],
+    [
+     194.74,
+     0.05
+    ],
+    [
+     220.907,
+     0.053
+    ],
+    [
+     250.476,
+     0.056
+    ],
+    [
+     283.884,
+     0.059
+    ],
+    [
+     321.627,
+     0.062
+    ],
+    [
+     364.272,
+     0.067
+    ],
+    [
+     412.474,
+     0.071
+    ],
+    [
+     466.99,
+     0.077
+    ],
+    [
+     528.714,
+     0.083
+    ],
+    [
+     598.713,
+     0.091
+    ],
+    [
+     678.29,
+     0.1
+    ],
+    [
+     769.081,
+     0.111
+    ],
+    [
+     873.214,
+     0.125
+    ],
+    [
+     993.589,
+     0.143
+    ],
+    [
+     1134.398,
+     0.167
+    ],
+    [
+     1302.181,
+     0.2
+    ],
+    [
+     1508.223,
+     0.25
+    ],
+    [
+     1774.937,
+     0.333
+    ],
+    [
+     2157.583,
+     0.5
+    ],
+    [
+     2862.412,
+     1.0
+    ],
+    [
+     3691.649,
+     2.0
+    ],
+    [
+     4716.463,
+     4.0
+    ]
+   ],
+   "frag": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     1652482.12015,
+     0.0
+    ],
+    [
+     3000000.0,
+     0.01986
+    ],
+    [
+     6000000.0,
+     0.02809
+    ],
+    [
+     10000000.0,
+     0.03627
+    ],
+    [
+     30000000.0,
+     0.06282
+    ],
+    [
+     60000000.0,
+     0.08884
+    ],
+    [
+     100000000.0,
+     0.11469
+    ],
+    [
+     300000000.0,
+     0.19865
+    ],
+    [
+     600000000.0,
+     0.28093
+    ],
+    [
+     1000000000.0,
+     0.36267
+    ],
+    [
+     3000000000.0,
+     0.62817
+    ],
+    [
+     6000000000.0,
+     0.88837
+    ],
+    [
+     10000000000.0,
+     1.14688
+    ],
+    [
+     30000000000.0,
+     1.98645
+    ],
+    [
+     60000000000.0,
+     2.80927
+    ],
+    [
+     100000000000.0,
+     3.62675
+    ],
+    [
+     300000000000.0,
+     6.28171
+    ],
+    [
+     600000000000.0,
+     8.88368
+    ],
+    [
+     1000000000000.0,
+     11.46878
+    ]
+   ],
+   "rad": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     5000.0,
+     0.0
+    ],
+    [
+     25000.0,
+     0.4
+    ],
+    [
+     50000.0,
+     2.0
+    ],
+    [
+     125000.0,
+     5.0
+    ],
+    [
+     250000.0,
+     20.0
+    ]
+   ],
+   "internal": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     1.0,
+     0.00128
+    ],
+    [
+     2.0,
+     0.00255
+    ],
+    [
+     4.0,
+     0.00511
+    ],
+    [
+     8.0,
+     0.01021
+    ],
+    [
+     16.0,
+     0.02042
+    ],
+    [
+     32.0,
+     0.04084
+    ],
+    [
+     64.0,
+     0.08169
+    ],
+    [
+     128.0,
+     0.16339
+    ],
+    [
+     256.0,
+     0.3268
+    ],
+    [
+     512.0,
+     0.6536
+    ],
+    [
+     1024.0,
+     1.30714
+    ],
+    [
+     2048.0,
+     2.61415
+    ],
+    [
+     4096.0,
+     5.22837
+    ],
+    [
+     8192.0,
+     10.45714
     ]
    ]
   },

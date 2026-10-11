@@ -31,11 +31,13 @@ export class Ship {
     this.radars = db.sensors.map(
       (s) => new Radar(world.data.radars[s.name], this, { mountAz_rad: s.mountAz_deg * DEG, sensorHeight_m }),
     );
+    // entries with the same launcher id (e.g. SM-1 and Harpoon on a Mk-13 arm) share one reload timer
+    const arms = new Map();
     this.launchers = db.launchers.map((l) => ({
       ...l,
       count: l.count,
-      lastFire: -1e9,
-      cycle_s: DEFAULT_CYCLE_S,
+      arm: arms.get(l.id) || arms.set(l.id, { lastFire: -1e9 }).get(l.id),
+      cycle_s: l.cycle_s ?? DEFAULT_CYCLE_S,
       fc: l.fireControl ? this.radars.find((r) => r.db.name === l.fireControl) || null : null,
     }));
   }

@@ -131,28 +131,61 @@ export class World {
         radar.lastScan = t;
         for (const o of this.objects.values()) {
           if (o.dead || o.side === ship.side) continue;
-          if (radar.canDetect(o, true)) this.updateTrack(ship.side, o, radar.db.name);
+          if (radar.canDetect(o, true)) this.updateTrack(ship.side, o, radar.db.name, 0, this.measure(radar, o));
         }
       }
     }
   }
 
-  updateTrack(side, o, source, error_m = 0) {
+  /**
+   * Fixed per-platform, per-sensor bias in [-1, 1] that varies with target bearing
+   * (tcSensorState::GetErrorFactor).
+   */
+  errorFactor(platformId, sensorKey, az) {
+    if (!this.errorTable) {
+      this.errorTable = Float32Array.from({ length: 4096 }, () => 2 * this.rng.next() - 1);
+    }
+    const w = Math.sin(2 * az) ** 2;
+    const i1 = ((platformId << 4) + (sensorKey & 0xf)) & 0xfff;
+    const i2 = (i1 + 1) & 0xfff;
+    return w * this.errorTable[i1] + (1 - w) * this.errorTable[i2];
+  }
+
+  /** Radar position report with range and bearing bias (tcSensorState::UpdateActiveReport). */
+  measure(radar, o) {
+    const p = radar.parent;
+    const key = radar.key ?? (radar.key = [...radar.db.name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7));
+    const az = bearing(p, o);
+    const slant_m = range3D_m(p, o) + radar.db.rangeError * this.errorFactor(p.id + 100, key, az);
+    const dalt = o.alt - p.alt;
+    const ground_m = Math.sqrt(Math.max(slant_m * slant_m - dalt * dalt, 0));
+    const azEst = az + radar.db.angleError_deg * DEG * this.errorFactor(p.id, key, az);
+    return { pos: offset(p, azEst, ground_m), angleError_deg: radar.db.angleError_deg };
+  }
+
+  /**
+   * @param {number} error_m intel report position error (random), 0 for sensor tracks
+   * @param {{pos, angleError_deg}} [measured] sensor report from measure()
+   */
+  updateTrack(side, o, source, error_m = 0, measured = null) {
     const tracks = this.tracks[side];
     const existing = tracks.get(o.id);
-    let pos = { lat: o.lat, lon: o.lon, alt: o.alt };
+    let pos = measured ? measured.pos : { lat: o.lat, lon: o.lon, alt: o.alt };
     if (error_m > 0) {
       pos = offset(pos, this.rng.next() * 2 * Math.PI, Math.abs(this.rng.gaussian()) * error_m);
     }
     // a sensor track is better than an intel report; don't overwrite a fresh one with intel
     if (existing && error_m > 0 && existing.error_m === 0 && this.t - existing.t < 30) return;
+    // simple fusion: keep a recent report from a more accurate radar
+    const quality = measured ? measured.angleError_deg : Infinity;
+    if (existing && existing.quality < quality && this.t - existing.t < 5) return;
     // intel tracks last until the next report is due; sensor tracks go stale quickly
     const intel = this.intel[side];
     const life_s = error_m > 0 && intel ? intel.interval_s * 1.2 : STALE_S[o.kind];
     const track = {
       id: o.id, kind: o.kind, className: o.db.name, side: o.side,
       lat: pos.lat, lon: pos.lon, alt: o.alt, heading: o.heading, pitch: o.pitch || 0,
-      speed_kts: o.speed_kts, t: this.t, expires: this.t + life_s, source, error_m,
+      speed_kts: o.speed_kts, t: this.t, expires: this.t + life_s, source, error_m, quality,
       firstSeen: existing ? existing.firstSeen : this.t,
     };
     tracks.set(o.id, track);
@@ -197,7 +230,7 @@ export class World {
     const L = ship.launchers[launcherIdx];
     if (!L || ship.dead) return { ok: false, reason: "no launcher" };
     if (L.count <= 0) return { ok: false, reason: "out of ammunition" };
-    if (this.t - L.lastFire < L.cycle_s) return { ok: false, reason: "launcher reloading" };
+    if (this.t - L.arm.lastFire < L.cycle_s) return { ok: false, reason: "launcher reloading" };
     const track = this.getTrack(ship.side, targetId);
     if (!track) return { ok: false, reason: "no track" };
     const db = this.data.missiles[L.item];
@@ -220,7 +253,7 @@ export class World {
     const m = new Missile(this, db, { shooter: ship, launcher: L, targetId, datum, fcRadar });
     this.add(m);
     L.count--;
-    L.lastFire = this.t;
+    L.arm.lastFire = this.t;
     return { ok: true, missile: m };
   }
 
@@ -292,6 +325,24 @@ export class World {
     this.salvos.push({ shipId: ship.id, targetId, remaining: count, launchers: idxs, fired: 0 });
     this.lastSalvoAt.set(`${ship.side}:${targetId}`, this.t);
     return { ok: true };
+  }
+
+  /**
+   * Every ship on a side that can reach the target fires `perShip` anti-ship missiles at it,
+   * so the missiles arrive together and saturate the target's fire-control channels.
+   * @param {number} rangeFactor fraction of maximum range a shooter must be inside
+   */
+  orderGroupSalvo(side, targetId, perShip, rangeFactor = 1) {
+    const track = this.getTrack(side, targetId);
+    if (!track) return { ok: false, reason: "no track" };
+    const datum = predict(track, this.t);
+    const busy = new Set(this.salvos.map((s) => s.shipId));
+    const shooters = this.ships(side).filter(
+      (s) => !busy.has(s.id) && this.antiShipLaunchers(s, groundRange_m(s, datum) / 1000 / rangeFactor).length,
+    );
+    if (!shooters.length) return { ok: false, reason: "no ship has anti-ship missiles in range" };
+    for (const s of shooters) this.orderSalvo(s, targetId, perShip);
+    return { ok: true, ships: shooters.length };
   }
 
   runSalvos() {
@@ -371,21 +422,25 @@ export class World {
     }
   }
 
-  /** Fire anti-ship salvos at enemy ship tracks within reach. */
+  /**
+   * Coordinated anti-ship attack on the largest enemy ship in reach. Waits until every ship
+   * carrying anti-ship missiles is in range, unless one is already well inside its range.
+   */
   offense(side, salvoSize) {
-    const busy = new Set(this.salvos.map((s) => s.shipId));
-    for (const tr of this.tracks[side].values()) {
-      if (tr.kind !== "ship") continue;
-      const key = `${side}:${tr.id}`;
-      if (this.t - (this.lastSalvoAt.get(key) ?? -1e9) < 600) continue;
-      for (const ship of this.ships(side)) {
-        if (busy.has(ship.id)) continue;
-        const range_km = groundRange_m(ship, predict(tr, this.t)) / 1000;
-        if (!this.antiShipLaunchers(ship, range_km / 0.9).length) continue;
-        this.orderSalvo(ship, tr.id, salvoSize);
-        busy.add(ship.id);
-        break;
-      }
+    if (this.salvos.some((s) => this.get(s.shipId)?.side === side)) return;
+    const carriers = this.ships(side).filter((s) => this.antiShipLaunchers(s).length);
+    if (!carriers.length) return;
+    const targets = [...this.tracks[side].values()]
+      .filter((tr) => tr.kind === "ship" && this.t - (this.lastSalvoAt.get(`${side}:${tr.id}`) ?? -1e9) >= 600)
+      .sort((a, b) => (this.data.ships[b.className]?.length_m || 0) - (this.data.ships[a.className]?.length_m || 0));
+    for (const tr of targets) {
+      const datum = predict(tr, this.t);
+      const inRange = (s, f) => this.antiShipLaunchers(s, groundRange_m(s, datum) / 1000 / f).length > 0;
+      const allReady = carriers.every((s) => inRange(s, 0.9));
+      const anyClose = carriers.some((s) => inRange(s, 0.6));
+      if (!allReady && !anyClose) continue;
+      const res = this.orderGroupSalvo(side, tr.id, salvoSize, 0.9);
+      if (res.ok) return;
     }
   }
 

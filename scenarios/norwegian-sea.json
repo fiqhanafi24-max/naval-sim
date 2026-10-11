@@ -1,13 +1,15 @@
 {
-  "name": "Norwegian Sea, 1992",
-  "description": "A US surface action group meets a Soviet-built destroyer pair beyond radar range. Both sides have periodic maritime patrol aircraft reports. Find them, shoot first, and survive the SS-N-22 salvo.",
-  "seed": 1992,
+  "name": "Norwegian Sea, 2008",
+  "description": "A US surface action group meets a Northern Fleet group beyond radar range. Each side gets a maritime patrol aircraft report every five minutes. Both sides' air defences can stop a small salvo, so coordinate your Harpoons to arrive together, and expect the Sovremennys to do the same with their SS-N-22s.",
+  "seed": 2008,
   "camera": { "lat_deg": 65.75, "lon_deg": 2.6, "alt_m": 160000, "pitch_deg": -45 },
   "units": [
-    { "side": "blue", "class": "Arleigh Burke DDGHM", "name": "USS Stethem", "lat_deg": 66.20, "lon_deg": 2.00, "heading_deg": 20, "speed_kts": 18 },
+    { "side": "blue", "class": "Ticonderoga CG Baseline 4", "name": "USS Cape St. George", "lat_deg": 66.20, "lon_deg": 2.00, "heading_deg": 20, "speed_kts": 18 },
+    { "side": "blue", "class": "Arleigh Burke DDGHM", "name": "USS Stethem", "lat_deg": 66.23, "lon_deg": 1.90, "heading_deg": 20, "speed_kts": 18 },
     { "side": "blue", "class": "Oliver Hazard Perry FFGHM", "name": "USS Halyburton", "lat_deg": 66.17, "lon_deg": 2.12, "heading_deg": 20, "speed_kts": 18 },
-    { "side": "red", "class": "Pr 956 Sarych", "name": "Bespokoynyy", "lat_deg": 67.20, "lon_deg": 3.40, "heading_deg": 200, "speed_kts": 20 },
-    { "side": "red", "class": "Pr 1155 Fregat", "name": "Admiral Kharlamov", "lat_deg": 67.23, "lon_deg": 3.30, "heading_deg": 200, "speed_kts": 20 }
+    { "side": "red", "class": "Pr 956 Sarych", "name": "Admiral Ushakov", "lat_deg": 67.20, "lon_deg": 3.40, "heading_deg": 200, "speed_kts": 20 },
+    { "side": "red", "class": "Pr 956 Sarych", "name": "Rastoropnyy", "lat_deg": 67.23, "lon_deg": 3.55, "heading_deg": 200, "speed_kts": 20 },
+    { "side": "red", "class": "Pr 1155 Fregat", "name": "Admiral Kharlamov", "lat_deg": 67.25, "lon_deg": 3.30, "heading_deg": 200, "speed_kts": 20 }
   ],
   "intel": {
     "blue": { "source": "P-3C report", "interval_s": 300, "error_m": 2500, "firstAt_s": 5 },
@@ -15,6 +17,6 @@
   },
   "ai": {
     "blue": { "autoDefend": true, "weaponsFree": false },
-    "red": { "autoDefend": true, "weaponsFree": true, "salvo": 4 }
+    "red": { "autoDefend": true, "weaponsFree": true, "salvo": 8 }
   }
 }
