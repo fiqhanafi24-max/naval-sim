@@ -31,6 +31,7 @@ export class Ship {
     this.radars = db.sensors.map(
       (s) => new Radar(world.data.radars[s.name], this, { mountAz_rad: s.mountAz_deg * DEG, sensorHeight_m }),
     );
+    this.magazine = { ...(db.magazine || {}) };
     // entries with the same launcher id (e.g. SM-1 and Harpoon on a Mk-13 arm) share one reload timer
     const arms = new Map();
     this.launchers = db.launchers.map((l) => ({
@@ -63,10 +64,30 @@ export class Ship {
     advance(this, this.speed_kts * KTS_TO_MPS * dt, this.heading);
   }
 
-  /** Weapons remaining, grouped by missile name. */
+  /** Weapons remaining (ready plus magazine), grouped by weapon name. */
   inventory() {
     const inv = {};
     for (const l of this.launchers) inv[l.item] = (inv[l.item] || 0) + l.count;
+    for (const [item, n] of Object.entries(this.magazine)) inv[item] = (inv[item] || 0) + n;
     return inv;
+  }
+
+  /**
+   * Refill an empty gun mount from the magazine after its reload time.
+   * @returns {boolean} true if the mount has ready rounds
+   */
+  reload(L, t) {
+    if (L.count > 0) return true;
+    if (!(this.magazine[L.item] > 0)) return false;
+    if (L.reloadDoneAt == null) {
+      L.reloadDoneAt = t + (L.reload_s || 0);
+      return false;
+    }
+    if (t < L.reloadDoneAt) return false;
+    const n = Math.min(L.capacity || 1, this.magazine[L.item]);
+    L.count += n;
+    this.magazine[L.item] -= n;
+    L.reloadDoneAt = null;
+    return true;
   }
 }

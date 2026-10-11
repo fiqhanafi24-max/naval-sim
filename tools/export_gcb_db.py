@@ -147,9 +147,17 @@ def export_missile(db, name, data):
         "damageEffect": m["DamageEffect"],
         "profile": profile,
     }
-    wd = one(db, "select * from weapon_damage where DatabaseClass=?", m["DamageModel"])
+    export_warhead(db, m["DamageModel"], data)
+    export_damage_effect(db, m["DamageEffect"], data)
+    return True
+
+
+def export_warhead(db, name, data):
+    if not name or name in data["warheads"]:
+        return
+    wd = one(db, "select * from weapon_damage where DatabaseClass=?", name)
     if wd:
-        data["warheads"][m["DamageModel"]] = {
+        data["warheads"][name] = {
             "maxRange_m": num(wd["MaxRange_m"]),
             "probDetonate": num(wd["ProbDetonate"], 1),
             "isPenetration": bool(int(num(wd["IsPenetration"]))),
@@ -160,7 +168,34 @@ def export_missile(db, name, data):
             "fragFragment_kg": num(wd["FragFragment_kg"]),
             "fragSpread": num(wd["FragSpread"], 1),
         }
-    export_damage_effect(db, m["DamageEffect"], data)
+
+
+GUN_ROUND, AUTO_CANNON = 0, 2
+
+
+def export_gun(db, name, data):
+    """Gun rounds and autocannon bursts (tcBallisticDBObject types 0 and 2)."""
+    if name in data["guns"]:
+        return True
+    b = one(db, "select * from ballistic where DatabaseClass=?", name)
+    if not b or int(num(b["BallisticType"], -1)) not in (GUN_ROUND, AUTO_CANNON):
+        return False
+    data["guns"][name] = {
+        "name": name,
+        "type": "autocannon" if int(num(b["BallisticType"])) == AUTO_CANNON else "gun",
+        "weight_kg": num(b["Weight_kg"]),
+        "launchSpeed_mps": num(b["LaunchSpeed_mps"]),
+        "minRange_km": num(b["MinRange_km"]),
+        "maxRange_km": num(b["MaxRange_km"], 20) or 20,
+        "angleError_rad": num(b["AngleError_rad"]),
+        "burstCount": int(num(b["BurstCount"])),
+        "targetFlags": int(num(b["targetFlags"])),
+        "detonationRange_m": num(b["DetonationRange_m"]),
+        "probNoFaults": num(b["ProbNoFaults"], 1),
+        "damageModel": b["DamageModel"],
+        "damageEffect": b["DamageEffect"],
+    }
+    export_warhead(db, b["DamageModel"], data)
     return True
 
 
@@ -182,7 +217,7 @@ def main(db_path, out_path):
     db = sqlite3.connect(db_path)
     db.text_factory = lambda b: b.decode("utf-8", errors="replace")
     data = {"source": "GCB2 database (c) 2014 gcblue, BSD-3-Clause",
-            "ships": {}, "radars": {}, "missiles": {}, "warheads": {},
+            "ships": {}, "radars": {}, "missiles": {}, "guns": {}, "warheads": {},
             "damageEffects": {}, "signatures": {}}
 
     for cls, setup_name in SHIPS:
@@ -202,14 +237,18 @@ def main(db_path, out_path):
         launchers = []
         for pl in rows(db, "select * from platform_launcher where DatabaseClass=? order by LauncherId", cls):
             for item in loadout.get(str(pl["LauncherId"])) or []:
-                if not export_missile(db, item[0], data):
-                    continue  # guns, torpedoes, empty cells: not ported yet
-                if any(seg["guidMode"] == 3 for seg in data["missiles"][item[0]]["profile"]):
-                    continue  # payload-deploying weapons (e.g. ASW rockets): not ported yet
+                if export_gun(db, item[0], data):
+                    kind = "gun"
+                elif export_missile(db, item[0], data):
+                    kind = "missile"
+                    if any(seg["guidMode"] == 3 for seg in data["missiles"][item[0]]["profile"]):
+                        continue  # payload-deploying weapons (e.g. ASW rockets): not ported yet
+                else:
+                    continue  # torpedoes, empty cells: not ported yet
                 fc = pl["FireControlSensor"] or None
                 if fc and fc not in data["radars"]:
                     fc = None
-                if fc is None and data["missiles"][item[0]]["needsFireControl"]:
+                if fc is None and kind == "missile" and data["missiles"][item[0]]["needsFireControl"]:
                     # fall back to the first fire-control radar on the ship
                     fc = next((x["name"] for x in sensors
                                if data["radars"][x["name"]]["maxFireControlTracks"] > 0), None)
@@ -217,19 +256,30 @@ def main(db_path, out_path):
                 # magazine before every shot; multi-round launchers just cycle
                 lc = one(db, "select * from launcher_configuration where DatabaseClass=? and ChildClass=?",
                          pl["LauncherClass"], item[0])
-                cycle_s = 2.0
+                cycle_s, capacity, load_s = 2.0, item[1], 0.0
                 if lc:
                     cycle_s = num(lc["CycleTime_s"], 2)
-                    if int(num(lc["ChildCapacity"], 1)) == 1:
-                        cycle_s += num(lc["LoadTime_s"])
+                    capacity = int(num(lc["ChildCapacity"], 1))
+                    load_s = num(lc["LoadTime_s"])
+                    if capacity == 1:
+                        cycle_s += load_s
                 launchers.append({
                     "id": int(pl["LauncherId"]),  # entries with the same id share one launcher arm
+                    "kind": kind,
                     "description": pl["Description"],
                     "item": item[0], "count": item[1], "cycle_s": round(cycle_s, 2),
+                    "capacity": capacity, "reload_s": load_s,
                     "firingArc_deg": num(pl["FiringArc_deg"]), "az_deg": num(pl["Az"]),
                     "el_deg": num(pl["El"]),
                     "fireControl": fc,
                 })
+
+        # gun ammunition below decks, used to reload mounts (missile totals are set above)
+        gun_items = {l["item"] for l in launchers if l["kind"] == "gun"}
+        magazine = {}
+        for r in rows(db, "select * from magazine_loadout where DatabaseClass=?", setup["MagazineLoadout"]):
+            if r["Item"] in gun_items:
+                magazine[r["Item"]] = magazine.get(r["Item"], 0) + int(num(r["Quantity"]))
 
         export_signature(db, s["RCS_Model"], data["signatures"])
         export_damage_effect(db, s["DamageEffect"], data)
@@ -241,12 +291,12 @@ def main(db_path, out_path):
             "rcs_dBsm": num(s["RCS_dBsm"]), "rcsModel": s["RCS_Model"] or None,
             "effectiveHeight_m": num(s["EffectiveHeight_m"]),
             "damageEffect": s["DamageEffect"],
-            "sensors": sensors, "launchers": launchers,
+            "sensors": sensors, "launchers": launchers, "magazine": magazine,
         }
 
     with open(out_path, "w") as f:
         json.dump(data, f, indent=1)
-    for k in ("ships", "radars", "missiles", "warheads", "damageEffects", "signatures"):
+    for k in ("ships", "radars", "missiles", "guns", "warheads", "damageEffects", "signatures"):
         print("%-14s %d" % (k, len(data[k])))
 
 

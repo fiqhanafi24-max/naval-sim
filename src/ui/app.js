@@ -129,6 +129,15 @@ function missileEntity(key, o, side) {
   return e;
 }
 
+/** Gun rounds and close-in-weapon bursts: small tracer dots, no label. */
+function roundEntity(key, o) {
+  const e = upsert(key, () => ({
+    point: { pixelSize: 3, color: COLORS.amber, disableDepthTestDistance: Number.POSITIVE_INFINITY },
+  }));
+  e.position = pos(o);
+  return e;
+}
+
 function ring(key, center, radius_m, color, dashed) {
   const e = upsert(key, () => ({
     polyline: {
@@ -153,6 +162,7 @@ function renderGlobe() {
   for (const o of world.objects.values()) {
     if (o.side === PLAYER || showTruth) {
       if (o.kind === "ship") shipEntity(`o${o.id}`, o, o.side, false);
+      else if (o.kind === "round") roundEntity(`o${o.id}`, o);
       else if (!o.dead) missileEntity(`o${o.id}`, o, o.side);
     }
   }
@@ -238,7 +248,9 @@ function renderPanels(force = false) {
   if (!o) return;
   const contacts = [...world.tracks[PLAYER].values()].filter((t) => t.kind === "ship");
   // rebuild the detail panel only when its structure changes, so inputs keep focus
-  const key = [o.id, o.dead, contacts.map((c) => c.id).join(","), Object.values(o.inventory()).join(",")].join("|");
+  // anti-ship stock decides whether fire buttons show; other counts are updated in place below
+  const asmLeft = o.launchers.filter((l) => l.count > 0 && isAntiShip(data.missiles[l.item])).length;
+  const key = [o.id, o.dead, contacts.map((c) => c.id).join(","), asmLeft].join("|");
   if (force || key !== detailKey) {
     detailKey = key;
     const asm = o.launchers.filter((l) => l.count > 0 && isAntiShip(data.missiles[l.item]));
@@ -259,7 +271,7 @@ function renderPanels(force = false) {
         <button id="oGo">Set</button>
       </div>`}
       <h2>Weapons</h2>
-      <div class="inv">${Object.entries(o.inventory()).map(([k, v]) => `${k}: ${v}`).join("<br>")}</div>
+      <div class="inv" id="dInv"></div>
       <h2>Hostile surface contacts</h2>
       <div id="contacts">${contacts.length ? "" : '<div class="muted">No contacts yet.</div>'}</div>
     `;
@@ -282,6 +294,7 @@ function renderPanels(force = false) {
   $("dCourse").textContent = `${Math.round(o.heading / DEG).toString().padStart(3, "0")}°`;
   $("dSpeed").textContent = `${o.speed_kts.toFixed(1)} kts`;
   $("dDamage").textContent = pct(o.damage);
+  $("dInv").innerHTML = Object.entries(o.inventory()).map(([k, v]) => `${k}: ${v}`).join("<br>");
   for (const c of contacts) {
     const el = document.querySelector(`[data-meta="${c.id}"]`);
     if (!el) continue;

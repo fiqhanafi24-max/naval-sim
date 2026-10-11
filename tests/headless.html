@@ -43,7 +43,7 @@ function check(name, ok, detail = "") {
 
 // 2. Harpoon flight: reaches ~Mach 0.85 and holds sea-skimming altitude
 {
-  const w = new World(data, atmo, { seed: 2, ai: { red: { autoDefend: false } }, units: [
+  const w = new World(data, atmo, { seed: 2, ai: { red: { autoDefend: false, guns: false } }, units: [
     { side: "blue", class: "Arleigh Burke DDGHM", lat_deg: 60, lon_deg: 0, heading_deg: 0, speed_kts: 0 },
     { side: "red", class: "Pr 956 Sarych", lat_deg: 60 + 80 / 111.2, lon_deg: 0, heading_deg: 90, speed_kts: 0 },
   ] });
@@ -89,7 +89,7 @@ function check(name, ok, detail = "") {
   const outcomes = [];
   let trace = [];
   for (let s = 0; s < n; s++) {
-    const w = new World(data, atmo, { seed: 200 + s, ai: { blue: { autoDefend: false }, red: {} }, units: [
+    const w = new World(data, atmo, { seed: 200 + s, ai: { blue: { autoDefend: false, guns: false }, red: {} }, units: [
       { side: "blue", class: "Arleigh Burke DDGHM", lat_deg: 60, lon_deg: 0, heading_deg: 90, speed_kts: 20 },
       { side: "red", class: "Pr 956 Sarych", lat_deg: 60 + 70 / 111.2, lon_deg: 0, heading_deg: 90, speed_kts: 0 },
     ] });
@@ -104,11 +104,46 @@ function check(name, ok, detail = "") {
       }
     }
     if (b.damage > 0) hits++;
-    outcomes.push(w.events.filter((e) => e.side === "red").map((e) => e.text).slice(-1)[0] || "no event");
+    outcomes.push(w.events.filter((e) => e.side === "red" && /Moskit/.test(e.text)).map((e) => e.text).slice(-1)[0] || "no event");
     if (s === 0) trace = rows.slice(-16);
   }
   check("SS-N-22 hits an undefended destroyer most of the time", hits >= n * 0.6, `${hits}/${n} hit`);
   lines.push("", "SS-N-22 outcomes: " + outcomes.join(" | "), "SS-N-22 trace (first run, last 8 s):", ...trace, "");
+}
+
+// 3c. Close-in weapons only: Burke with its SAMs emptied against single SS-N-22s
+{
+  let defended = 0, bursts = 0, n = 10;
+  for (let s = 0; s < n; s++) {
+    const w = new World(data, atmo, { seed: 300 + s, units: [
+      { side: "blue", class: "Arleigh Burke DDGHM", lat_deg: 60, lon_deg: 0, heading_deg: 0, speed_kts: 15 },
+      { side: "red", class: "Pr 956 Sarych", lat_deg: 60 + 70 / 111.2, lon_deg: 0, heading_deg: 90, speed_kts: 0 },
+    ] });
+    const [b, r] = w.ships();
+    for (const L of b.launchers) if (L.kind === "missile") L.count = 0;
+    const ammo = () => b.launchers.filter((L) => L.item.startsWith("20mm")).reduce((a, L) => a + L.count, 0);
+    const before = ammo();
+    w.updateTrack("red", b, "test");
+    const m = w.launch(r, r.launchers.findIndex((l) => l.item.includes("Moskit")), b.id).missile;
+    for (let i = 0; i < 3000 && !m.dead; i++) w.step(0.1);
+    bursts += before - ammo();
+    if (b.damage === 0) defended++;
+  }
+  check("Phalanx fires at inbound SS-N-22s", bursts > 0, `${bursts} bursts fired over ${n} runs`);
+  lines.push(`INFO Phalanx alone stopped ${defended}/${n} SS-N-22s`);
+}
+
+// 3d. Gun duel: Burke and Sovremenny 15 km apart, missiles emptied
+{
+  const w = new World(data, atmo, { seed: 400, units: [
+    { side: "blue", class: "Arleigh Burke DDGHM", lat_deg: 60, lon_deg: 0, heading_deg: 90, speed_kts: 10 },
+    { side: "red", class: "Pr 956 Sarych", lat_deg: 60 + 15 / 111.2, lon_deg: 0, heading_deg: 270, speed_kts: 10 },
+  ] });
+  const [b, r] = w.ships();
+  for (const ship of [b, r]) for (const L of ship.launchers) if (L.kind === "missile") L.count = 0;
+  for (let i = 0; i < 3000; i++) w.step(0.1);
+  const fired = (ship) => ship.launchers.filter((L) => L.kind === "gun" && /mm (mk|F-44)/.test(L.item)).map((L) => `${L.item.split(" ")[0]}: ${L.count} left`).join(", ");
+  check("Deck guns hit at 15 km", b.damage > 0 || r.damage > 0, `after 5 min: Burke ${(b.damage * 100).toFixed(0)}%, Sovremenny ${(r.damage * 100).toFixed(0)}% (${fired(b)} | ${fired(r)})`);
 }
 
 // 4. Damage tables

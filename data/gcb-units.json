@@ -36,10 +36,13 @@
    "launchers": [
     {
      "id": 0,
+     "kind": "missile",
      "description": "VLS",
      "item": "RIM-66M",
      "count": 32,
      "cycle_s": 1.0,
+     "capacity": 1,
+     "reload_s": 0.0,
      "firingArc_deg": 0.0,
      "az_deg": 0.0,
      "el_deg": 90.0,
@@ -47,21 +50,55 @@
     },
     {
      "id": 1,
+     "kind": "missile",
      "description": "VLS",
      "item": "RIM-162A",
      "count": 24,
      "cycle_s": 1.0,
+     "capacity": 1,
+     "reload_s": 0.0,
      "firingArc_deg": 0.0,
      "az_deg": 0.0,
      "el_deg": 90.0,
      "fireControl": "SPG-62 12"
     },
     {
+     "id": 3,
+     "kind": "gun",
+     "description": "Fwd 20mm Phalanx CIWS",
+     "item": "20mm mark 244-0 ELC",
+     "count": 97,
+     "cycle_s": 0.21,
+     "capacity": 97,
+     "reload_s": 300.0,
+     "firingArc_deg": 270.0,
+     "az_deg": 0.0,
+     "el_deg": 0.0,
+     "fireControl": "Phalanx FC"
+    },
+    {
+     "id": 4,
+     "kind": "gun",
+     "description": "Aft 20mm Phalanx CIWS",
+     "item": "20mm mark 244-0 ELC",
+     "count": 97,
+     "cycle_s": 0.21,
+     "capacity": 97,
+     "reload_s": 300.0,
+     "firingArc_deg": 270.0,
+     "az_deg": 180.0,
+     "el_deg": 0.0,
+     "fireControl": "Phalanx FC"
+    },
+    {
      "id": 5,
+     "kind": "missile",
      "description": "Stbd Harpoon Launcher",
      "item": "RGM-84F Harpoon",
      "count": 4,
      "cycle_s": 3.0,
+     "capacity": 4,
+     "reload_s": 3600.0,
      "firingArc_deg": 0.0,
      "az_deg": 90.0,
      "el_deg": 40.0,
@@ -69,16 +106,37 @@
     },
     {
      "id": 6,
+     "kind": "missile",
      "description": "Port harpoon launcher",
      "item": "RGM-84F Harpoon",
      "count": 4,
      "cycle_s": 3.0,
+     "capacity": 4,
+     "reload_s": 3600.0,
      "firingArc_deg": 0.0,
      "az_deg": 270.0,
      "el_deg": 40.0,
      "fireControl": null
+    },
+    {
+     "id": 7,
+     "kind": "gun",
+     "description": "Fwd 127mm Deck Gun",
+     "item": "127mm mk 127 HE-CVT mk 67",
+     "count": 20,
+     "cycle_s": 2.73,
+     "capacity": 20,
+     "reload_s": 20.0,
+     "firingArc_deg": 320.0,
+     "az_deg": 0.0,
+     "el_deg": 0.0,
+     "fireControl": "SPY-1D"
     }
-   ]
+   ],
+   "magazine": {
+    "127mm mk 127 HE-CVT mk 67": 680,
+    "20mm mark 244-0 ELC": 1046
+   }
   },
   "Ticonderoga CG Baseline 4": {
    "name": "Ticonderoga CG Baseline 4",
@@ -119,10 +177,13 @@
    "launchers": [
     {
      "id": 0,
+     "kind": "missile",
      "description": "VLS",
      "item": "RIM-66M",
      "count": 60,
      "cycle_s": 1.0,
+     "capacity": 1,
+     "reload_s": 0.25,
      "firingArc_deg": 360.0,
      "az_deg": 0.0,
      "el_deg": 90.0,
@@ -130,21 +191,55 @@
     },
     {
      "id": 1,
+     "kind": "missile",
      "description": "VLS",
      "item": "RIM-162A",
      "count": 32,
      "cycle_s": 1.0,
+     "capacity": 1,
+     "reload_s": 0.25,
      "firingArc_deg": 360.0,
      "az_deg": 0.0,
      "el_deg": 90.0,
      "fireControl": "SPG-62 16"
     },
     {
+     "id": 3,
+     "kind": "gun",
+     "description": "stbd 20mm Phalanx CIWS",
+     "item": "20mm mark 244-0 ELC",
+     "count": 97,
+     "cycle_s": 0.21,
+     "capacity": 97,
+     "reload_s": 300.0,
+     "firingArc_deg": 160.0,
+     "az_deg": 95.0,
+     "el_deg": 0.0,
+     "fireControl": "Phalanx FC"
+    },
+    {
+     "id": 4,
+     "kind": "gun",
+     "description": "port 20mm Phalanx CIWS",
+     "item": "20mm mark 244-0 ELC",
+     "count": 97,
+     "cycle_s": 0.21,
+     "capacity": 97,
+     "reload_s": 300.0,
+     "firingArc_deg": 160.0,
+     "az_deg": 265.0,
+     "el_deg": 0.0,
+     "fireControl": "Phalanx FC"
+    },
+    {
      "id": 5,
+     "kind": "missile",
      "description": "stbd harpoon launcher",
      "item": "RGM-84F Harpoon",
      "count": 4,
      "cycle_s": 3.0,
+     "capacity": 4,
+     "reload_s": 3600.0,
      "firingArc_deg": 0.0,
      "az_deg": 90.0,
      "el_deg": 40.0,
@@ -152,16 +247,51 @@
     },
     {
      "id": 6,
+     "kind": "missile",
      "description": "port harpoon launcher",
      "item": "RGM-84F Harpoon",
      "count": 4,
      "cycle_s": 3.0,
+     "capacity": 4,
+     "reload_s": 3600.0,
      "firingArc_deg": 0.0,
      "az_deg": 270.0,
      "el_deg": 40.0,
      "fireControl": null
+    },
+    {
+     "id": 7,
+     "kind": "gun",
+     "description": "fwd 127mm deck gun",
+     "item": "127mm mk 80 HE-PD mk 67",
+     "count": 20,
+     "cycle_s": 2.0,
+     "capacity": 20,
+     "reload_s": 20.0,
+     "firingArc_deg": 300.0,
+     "az_deg": 0.0,
+     "el_deg": 0.0,
+     "fireControl": null
+    },
+    {
+     "id": 8,
+     "kind": "gun",
+     "description": "aft 127mm deck gun",
+     "item": "127mm mk 80 HE-PD mk 67",
+     "count": 20,
+     "cycle_s": 2.0,
+     "capacity": 20,
+     "reload_s": 20.0,
+     "firingArc_deg": 270.0,
+     "az_deg": 180.0,
+     "el_deg": 0.0,
+     "fireControl": null
     }
-   ]
+   ],
+   "magazine": {
+    "127mm mk 80 HE-PD mk 67": 1200,
+    "20mm mark 244-0 ELC": 1046
+   }
   },
   "Oliver Hazard Perry FFGHM": {
    "name": "Oliver Hazard Perry FFGHM",
@@ -197,11 +327,42 @@
    ],
    "launchers": [
     {
+     "id": 0,
+     "kind": "gun",
+     "description": "Aft 20mm Phalanx CIWS",
+     "item": "20mm mark 244-0 ELC",
+     "count": 97,
+     "cycle_s": 0.21,
+     "capacity": 97,
+     "reload_s": 300.0,
+     "firingArc_deg": 350.0,
+     "az_deg": 180.0,
+     "el_deg": 0.0,
+     "fireControl": null
+    },
+    {
+     "id": 1,
+     "kind": "gun",
+     "description": "Fwd 76mm Deck Gun",
+     "item": "76mm HE-MOM",
+     "count": 80,
+     "cycle_s": 0.75,
+     "capacity": 80,
+     "reload_s": 240.0,
+     "firingArc_deg": 320.0,
+     "az_deg": 180.0,
+     "el_deg": 0.0,
+     "fireControl": null
+    },
+    {
      "id": 2,
+     "kind": "missile",
      "description": "Fwd MK-13 Mod4 Single Arm Missile Launcher",
      "item": "RIM-66L",
      "count": 36,
      "cycle_s": 7.64,
+     "capacity": 1,
+     "reload_s": 6.64,
      "firingArc_deg": 300.0,
      "az_deg": 0.0,
      "el_deg": 40.0,
@@ -209,16 +370,23 @@
     },
     {
      "id": 2,
+     "kind": "missile",
      "description": "Fwd MK-13 Mod4 Single Arm Missile Launcher",
      "item": "RGM-84F Harpoon",
      "count": 4,
      "cycle_s": 7.64,
+     "capacity": 1,
+     "reload_s": 6.64,
      "firingArc_deg": 300.0,
      "az_deg": 0.0,
      "el_deg": 40.0,
      "fireControl": null
     }
-   ]
+   ],
+   "magazine": {
+    "20mm mark 244-0 ELC": 523,
+    "76mm HE-MOM": 240
+   }
   },
   "Pr 956 Sarych": {
    "name": "Pr 956 Sarych",
@@ -247,10 +415,13 @@
    "launchers": [
     {
      "id": 0,
+     "kind": "missile",
      "description": "fwd 9M317 launcher",
      "item": "9M38M1",
      "count": 22,
      "cycle_s": 7.0,
+     "capacity": 22,
+     "reload_s": 30.0,
      "firingArc_deg": 300.0,
      "az_deg": 0.0,
      "el_deg": 40.0,
@@ -258,27 +429,121 @@
     },
     {
      "id": 1,
+     "kind": "missile",
      "description": "Aft 9M317 launcher",
      "item": "9M38M1",
      "count": 22,
      "cycle_s": 7.0,
+     "capacity": 22,
+     "reload_s": 30.0,
      "firingArc_deg": 270.0,
      "az_deg": 180.0,
      "el_deg": 40.0,
      "fireControl": "MR-700A Fregat AS/SS"
     },
     {
+     "id": 2,
+     "kind": "gun",
+     "description": "stbd 30mm AK-630 CIWS",
+     "item": "30mm OF-84 HE-FRAG AK-630M",
+     "count": 59,
+     "cycle_s": 0.41,
+     "capacity": 59,
+     "reload_s": 1200.0,
+     "firingArc_deg": 190.0,
+     "az_deg": 80.0,
+     "el_deg": 0.0,
+     "fireControl": "MR-700A Fregat AS/SS"
+    },
+    {
+     "id": 3,
+     "kind": "gun",
+     "description": "port 30mm AK-630 CIWS",
+     "item": "30mm OF-84 HE-FRAG AK-630M",
+     "count": 59,
+     "cycle_s": 0.41,
+     "capacity": 59,
+     "reload_s": 1200.0,
+     "firingArc_deg": 190.0,
+     "az_deg": 280.0,
+     "el_deg": 0.0,
+     "fireControl": "MR-700A Fregat AS/SS"
+    },
+    {
+     "id": 4,
+     "kind": "gun",
+     "description": "stbd 30mm AK-630 CIWS",
+     "item": "30mm OF-84 HE-FRAG AK-630M",
+     "count": 59,
+     "cycle_s": 0.41,
+     "capacity": 59,
+     "reload_s": 1200.0,
+     "firingArc_deg": 190.0,
+     "az_deg": 100.0,
+     "el_deg": 0.0,
+     "fireControl": "MR-700A Fregat AS/SS"
+    },
+    {
+     "id": 5,
+     "kind": "gun",
+     "description": "port 30mm AK-630 CIWS",
+     "item": "30mm OF-84 HE-FRAG AK-630M",
+     "count": 59,
+     "cycle_s": 0.41,
+     "capacity": 59,
+     "reload_s": 1200.0,
+     "firingArc_deg": 190.0,
+     "az_deg": 260.0,
+     "el_deg": 0.0,
+     "fireControl": "MR-700A Fregat AS/SS"
+    },
+    {
      "id": 6,
+     "kind": "missile",
      "description": "fwd 3M80 launcher",
      "item": "3M80M Moskit-M",
      "count": 8,
      "cycle_s": 0.5,
+     "capacity": 8,
+     "reload_s": 4800.0,
      "firingArc_deg": 0.0,
      "az_deg": 0.0,
      "el_deg": 20.0,
      "fireControl": null
+    },
+    {
+     "id": 7,
+     "kind": "gun",
+     "description": "fwd 130mm deck gun",
+     "item": "130mm F-44 HE",
+     "count": 100,
+     "cycle_s": 1.5,
+     "capacity": 100,
+     "reload_s": 50.0,
+     "firingArc_deg": 300.0,
+     "az_deg": 0.0,
+     "el_deg": 0.0,
+     "fireControl": "MR-700A Fregat AS/SS"
+    },
+    {
+     "id": 8,
+     "kind": "gun",
+     "description": "aft 130mm deck gun",
+     "item": "130mm F-44 HE",
+     "count": 100,
+     "cycle_s": 1.5,
+     "capacity": 100,
+     "reload_s": 50.0,
+     "firingArc_deg": 300.0,
+     "az_deg": 180.0,
+     "el_deg": 0.0,
+     "fireControl": "MR-700A Fregat AS/SS"
     }
-   ]
+   ],
+   "magazine": {
+    "130mm F-44 HE": 1000,
+    "30mm OF-84 HE-FRAG AK-630M": 944
+   }
   },
   "Pr 1155 Fregat": {
    "name": "Pr 1155 Fregat",
@@ -307,16 +572,107 @@
    "launchers": [
     {
      "id": 0,
+     "kind": "missile",
      "description": "VLS",
      "item": "9M330 Kinzhal",
      "count": 64,
      "cycle_s": 1.0,
+     "capacity": 64,
+     "reload_s": 42240.0,
      "firingArc_deg": 0.0,
      "az_deg": 0.0,
      "el_deg": 90.0,
      "fireControl": "Top Plate AS/SS"
+    },
+    {
+     "id": 1,
+     "kind": "gun",
+     "description": "fd 100mm deck gun",
+     "item": "100mm OF-58 FRAG",
+     "count": 46,
+     "cycle_s": 1.09,
+     "capacity": 46,
+     "reload_s": 30.0,
+     "firingArc_deg": 270.0,
+     "az_deg": 0.0,
+     "el_deg": 0.0,
+     "fireControl": null
+    },
+    {
+     "id": 2,
+     "kind": "gun",
+     "description": "fwd 100mm deck gun",
+     "item": "100mm OF-58 FRAG",
+     "count": 46,
+     "cycle_s": 1.09,
+     "capacity": 46,
+     "reload_s": 30.0,
+     "firingArc_deg": 300.0,
+     "az_deg": 0.0,
+     "el_deg": 0.0,
+     "fireControl": null
+    },
+    {
+     "id": 3,
+     "kind": "gun",
+     "description": "stbd 30mm AK-630 CIWS",
+     "item": "30mm OF-84 HE-FRAG AK-630M",
+     "count": 59,
+     "cycle_s": 0.41,
+     "capacity": 59,
+     "reload_s": 1200.0,
+     "firingArc_deg": 170.0,
+     "az_deg": 80.0,
+     "el_deg": 0.0,
+     "fireControl": null
+    },
+    {
+     "id": 4,
+     "kind": "gun",
+     "description": "stbd 30mm AK-630 CIWS",
+     "item": "30mm OF-84 HE-FRAG AK-630M",
+     "count": 59,
+     "cycle_s": 0.41,
+     "capacity": 59,
+     "reload_s": 1200.0,
+     "firingArc_deg": 170.0,
+     "az_deg": 100.0,
+     "el_deg": 0.0,
+     "fireControl": null
+    },
+    {
+     "id": 5,
+     "kind": "gun",
+     "description": "port 30mm AK-630 CIWS",
+     "item": "30mm OF-84 HE-FRAG AK-630M",
+     "count": 59,
+     "cycle_s": 0.41,
+     "capacity": 59,
+     "reload_s": 1200.0,
+     "firingArc_deg": 170.0,
+     "az_deg": 260.0,
+     "el_deg": 0.0,
+     "fireControl": null
+    },
+    {
+     "id": 6,
+     "kind": "gun",
+     "description": "port 30mm AK-630 CIWS",
+     "item": "30mm OF-84 HE-FRAG AK-630M",
+     "count": 59,
+     "cycle_s": 0.41,
+     "capacity": 59,
+     "reload_s": 1200.0,
+     "firingArc_deg": 170.0,
+     "az_deg": 280.0,
+     "el_deg": 0.0,
+     "fireControl": null
     }
-   ]
+   ],
+   "magazine": {
+    "100mm OF-58 FRAG": 700,
+    "30mm OF-84 HE-FRAG AK-630M": 944
+   }
   }
  },
  "radars": {
@@ -1171,6 +1527,113 @@
    ]
   }
  },
+ "guns": {
+  "20mm mark 244-0 ELC": {
+   "name": "20mm mark 244-0 ELC",
+   "type": "autocannon",
+   "weight_kg": 0.15,
+   "launchSpeed_mps": 1113.0,
+   "minRange_km": 0.2,
+   "maxRange_km": 4.8,
+   "angleError_rad": 6e-05,
+   "burstCount": 16,
+   "targetFlags": 11,
+   "detonationRange_m": 0.0,
+   "probNoFaults": 1.0,
+   "damageModel": "CIWSSolidProjectile",
+   "damageEffect": "ToughWeapon"
+  },
+  "127mm mk 127 HE-CVT mk 67": {
+   "name": "127mm mk 127 HE-CVT mk 67",
+   "type": "gun",
+   "weight_kg": 30.0,
+   "launchSpeed_mps": 815.67,
+   "minRange_km": 0.2,
+   "maxRange_km": 23.66,
+   "angleError_rad": 0.0032,
+   "burstCount": 0,
+   "targetFlags": 5,
+   "detonationRange_m": 0.0,
+   "probNoFaults": 1.0,
+   "damageModel": "ExplosiveProjectile3kg",
+   "damageEffect": "ToughWeapon"
+  },
+  "127mm mk 80 HE-PD mk 67": {
+   "name": "127mm mk 80 HE-PD mk 67",
+   "type": "gun",
+   "weight_kg": 30.0,
+   "launchSpeed_mps": 815.67,
+   "minRange_km": 0.2,
+   "maxRange_km": 23.66,
+   "angleError_rad": 0.0032,
+   "burstCount": 0,
+   "targetFlags": 5,
+   "detonationRange_m": 0.0,
+   "probNoFaults": 1.0,
+   "damageModel": "ExplosiveProjectile3kg",
+   "damageEffect": "ToughWeapon"
+  },
+  "76mm HE-MOM": {
+   "name": "76mm HE-MOM",
+   "type": "gun",
+   "weight_kg": 6.3,
+   "launchSpeed_mps": 919.0,
+   "minRange_km": 0.2,
+   "maxRange_km": 18.4,
+   "angleError_rad": 0.003104,
+   "burstCount": 0,
+   "targetFlags": 15,
+   "detonationRange_m": 6.4,
+   "probNoFaults": 1.0,
+   "damageModel": "BlastFragMis2.3kg",
+   "damageEffect": "ToughWeapon"
+  },
+  "30mm OF-84 HE-FRAG AK-630M": {
+   "name": "30mm OF-84 HE-FRAG AK-630M",
+   "type": "autocannon",
+   "weight_kg": 0.39,
+   "launchSpeed_mps": 900.0,
+   "minRange_km": 0.2,
+   "maxRange_km": 4.0,
+   "angleError_rad": 0.0022,
+   "burstCount": 34,
+   "targetFlags": 15,
+   "detonationRange_m": 0.0,
+   "probNoFaults": 1.0,
+   "damageModel": "SolidProjectile",
+   "damageEffect": "ToughWeapon"
+  },
+  "130mm F-44 HE": {
+   "name": "130mm F-44 HE",
+   "type": "gun",
+   "weight_kg": 33.0,
+   "launchSpeed_mps": 850.0,
+   "minRange_km": 0.2,
+   "maxRange_km": 23.0,
+   "angleError_rad": 0.0032,
+   "burstCount": 0,
+   "targetFlags": 5,
+   "detonationRange_m": 0.0,
+   "probNoFaults": 1.0,
+   "damageModel": "SolidProjectile",
+   "damageEffect": "ToughWeapon"
+  },
+  "100mm OF-58 FRAG": {
+   "name": "100mm OF-58 FRAG",
+   "type": "gun",
+   "weight_kg": 15.0,
+   "launchSpeed_mps": 880.0,
+   "minRange_km": 0.2,
+   "maxRange_km": 21.0,
+   "angleError_rad": 0.0032,
+   "burstCount": 0,
+   "targetFlags": 5,
+   "detonationRange_m": 0.0,
+   "probNoFaults": 1.0,
+   "damageModel": "SolidProjectile",
+   "damageEffect": "ToughWeapon"
+  }
+ },
  "warheads": {
   "BlastFragMis62.5kg": {
    "maxRange_m": 3617.707328,
@@ -1194,6 +1657,17 @@
    "fragFragment_kg": 0.029815006,
    "fragSpread": 0.3
   },
+  "CIWSSolidProjectile": {
+   "maxRange_m": 25.0,
+   "probDetonate": 1.0,
+   "isPenetration": false,
+   "blastCharge_kg": 0.0,
+   "fragCharge_kg": 0.0,
+   "radCharge_kg": 0.0,
+   "fragMetal_kg": 0.0,
+   "fragFragment_kg": 0.0,
+   "fragSpread": 1.0
+  },
   "Pen220kg": {
    "maxRange_m": 66.95076,
    "probDetonate": 0.85,
@@ -1205,6 +1679,28 @@
    "fragFragment_kg": 0.0,
    "fragSpread": 0.0
   },
+  "ExplosiveProjectile3kg": {
+   "maxRange_m": 50.0,
+   "probDetonate": 0.85,
+   "isPenetration": true,
+   "blastCharge_kg": 3.0,
+   "fragCharge_kg": 0.0,
+   "radCharge_kg": 0.0,
+   "fragMetal_kg": 0.0,
+   "fragFragment_kg": 0.0,
+   "fragSpread": 1.0
+  },
+  "BlastFragMis2.3kg": {
+   "maxRange_m": 1234.96144,
+   "probDetonate": 0.85,
+   "isPenetration": false,
+   "blastCharge_kg": 0.642753247,
+   "fragCharge_kg": 0.905497835,
+   "radCharge_kg": 0.064275325,
+   "fragMetal_kg": 0.751748918,
+   "fragFragment_kg": 0.004474696,
+   "fragSpread": 0.054444444
+  },
   "BlastFragAir70kg": {
    "maxRange_m": 3707.501164,
    "probDetonate": 0.85,
@@ -1215,6 +1711,17 @@
    "fragMetal_kg": 24.84488499,
    "fragFragment_kg": 0.037530038,
    "fragSpread": 0.3
+  },
+  "SolidProjectile": {
+   "maxRange_m": 50.0,
+   "probDetonate": 1.0,
+   "isPenetration": true,
+   "blastCharge_kg": 0.0,
+   "fragCharge_kg": 0.0,
+   "radCharge_kg": 0.0,
+   "fragMetal_kg": 0.0,
+   "fragFragment_kg": 0.0,
+   "fragSpread": 1.0
   },
   "Pen300kg": {
    "maxRange_m": 74.23524,

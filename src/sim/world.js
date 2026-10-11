@@ -2,6 +2,7 @@
 // simple computer opponent. No DOM access, so it can run headless (tests, a future server).
 
 import { Atmosphere } from "./atmosphere.js";
+import { Round, inFiringArc } from "./ballistic.js";
 import { calculateDamage, applyDamage } from "./damage.js";
 import { DEG, bearing, groundRange_m, offset, range3D_m, wrapPi } from "./geo.js";
 import { Missile, predict } from "./missile.js";
@@ -18,11 +19,12 @@ const SURFACE_TARGET = 0x1, AIR_TARGET = 0x2, MISSILE_TARGET = 0x8;
 
 /** Dedicated anti-ship missile (dual-role SAMs like ESSM can hit ships but are kept for air defence). */
 export function isAntiShip(db) {
-  return (db.targetFlags & SURFACE_TARGET) !== 0 && (db.targetFlags & (AIR_TARGET | MISSILE_TARGET)) === 0;
+  return !!db && (db.targetFlags & SURFACE_TARGET) !== 0 && (db.targetFlags & (AIR_TARGET | MISSILE_TARGET)) === 0;
 }
 
+/** @param db missile record; undefined for guns, which have their own engagement logic */
 export function isAntiAir(db) {
-  return (db.targetFlags & (AIR_TARGET | MISSILE_TARGET)) !== 0;
+  return !!db && (db.targetFlags & (AIR_TARGET | MISSILE_TARGET)) !== 0;
 }
 
 export class World {
@@ -120,6 +122,8 @@ export class World {
       for (const side of SIDES) this.runAi(side);
     }
     this.runSalvos();
+    // guns are checked every step: close-in weapons fire several bursts a second
+    for (const side of SIDES) if (this.ai[side]?.guns !== false) this.gunnery(side);
     this.detonations = this.detonations.filter((d) => t - d.t < 3);
     this.checkEnd();
   }
@@ -130,7 +134,7 @@ export class World {
         if (!radar.active || t - radar.lastScan < radar.db.scanPeriod_s) continue;
         radar.lastScan = t;
         for (const o of this.objects.values()) {
-          if (o.dead || o.side === ship.side) continue;
+          if (o.dead || o.side === ship.side || o.kind === "round") continue;
           if (radar.canDetect(o, true)) this.updateTrack(ship.side, o, radar.db.name, 0, this.measure(radar, o));
         }
       }
@@ -274,25 +278,41 @@ export class World {
 
     const radius_m = Math.max(wh ? wh.maxRange_m : 0, 50);
     for (const o of [...this.objects.values()]) {
-      if (o === m || o.dead) continue;
+      if (o === m || o.dead || o.kind === "round") continue;
       if (o !== directTarget && range3D_m(m, o) > radius_m) continue;
       const res = applyDamage(o, calculateDamage(m, o, good, this), this);
       if (res.newDamage <= 0) continue;
       if (o.kind === "ship") {
-        this.log(m.side, `${m.name} hit ${o.name}: +${Math.round(res.newDamage * 100)}% damage (${res.code})`, "hit");
+        this.log(m.side, `${m.label || m.name} hit ${o.name}: +${Math.round(res.newDamage * 100)}% damage (${res.code})`, "hit");
         this.log(o.side, `${o.name} hit by ${m.db.name}: ${Math.round(o.damage * 100)}% damaged`, "damage");
       } else if (o.damage < 1 && o.side !== m.side) {
         this.log(m.side, `${m.name} damaged ${o.db.name} (${Math.round(o.damage * 100)}%) but it is still flying`, "miss");
       }
       if (o.damage >= 1) this.destroy(o, m);
     }
+    if (m.kind === "round") return this.removeRound(m);
     this.removeMissile(m, null);
     if (!good) this.log(m.side, `${m.name} warhead failed to detonate`, "miss");
   }
 
+  removeRound(r) {
+    r.dead = true;
+    this.objects.delete(r.id);
+  }
+
+  /** Damage from an autocannon burst (tcSimState::EvaluateBallisticDamage). */
+  applyRoundDamage(round, target, dmg) {
+    const res = applyDamage(target, dmg, this);
+    if (res.newDamage > 0 && target.kind === "ship") {
+      this.log(round.side, `${round.label} hit ${target.name}: +${Math.round(res.newDamage * 100)}% damage`, "hit");
+      this.log(target.side, `${target.name} hit by gunfire: ${Math.round(target.damage * 100)}% damaged`, "damage");
+    }
+    if (target.damage >= 1) this.destroy(target, round);
+  }
+
   destroy(o, by) {
     if (o.kind === "missile") {
-      if (by && by.side !== o.side) this.log(by.side, `${by.db.name} intercepted ${o.db.name}`, "kill");
+      if (by && by.side !== o.side) this.log(by.side, `${by.label || by.db.name} intercepted ${o.db.name}`, "kill");
       this.removeMissile(o, null);
       return;
     }
@@ -442,6 +462,57 @@ export class World {
       const res = this.orderGroupSalvo(side, tr.id, salvoSize, 0.9);
       if (res.ok) return;
     }
+  }
+
+  /**
+   * Guns fire on their own once a target is in reach. Close-in weapons engage inbound missiles
+   * inside 8 km (as GCB2's PointDefense.py); deck guns engage missiles if their rounds can
+   * (e.g. the 76 mm), otherwise surface ships within level gun range. Aim uses the target's true
+   * position once the side holds a radar track of it, as GCB2's gun solution does.
+   */
+  gunnery(side) {
+    const t = this.t;
+    const tracks = [...this.tracks[side].values()].filter((tr) => tr.error_m === 0);
+    if (!tracks.length) return;
+    for (const ship of this.ships(side)) {
+      for (const L of ship.launchers) {
+        if (L.kind !== "gun" || t - L.arm.lastFire < L.cycle_s || !ship.reload(L, t)) continue;
+        const db = this.data.guns[L.item];
+        const target = this.pickGunTarget(ship, L, db, tracks);
+        if (!target) continue;
+        this.add(new Round(this, db, { shooter: ship, launcher: L, target }));
+        L.count--;
+        L.arm.lastFire = t;
+      }
+    }
+  }
+
+  pickGunTarget(ship, L, db, tracks) {
+    const levelRange_m = (db.launchSpeed_mps * db.launchSpeed_mps) / 9.81;
+    let best = null;
+    let bestScore = Infinity;
+    for (const tr of tracks) {
+      const o = this.get(tr.id);
+      if (!o || o.dead) continue;
+      const range_m = range3D_m(ship, o);
+      if (range_m < 1000 * db.minRange_km) continue;
+      let score;
+      if (o.kind === "missile" && db.targetFlags & MISSILE_TARGET) {
+        const reach_m = Math.min(1000 * db.maxRange_km, db.type === "autocannon" ? 8000 : Infinity);
+        if (range_m > reach_m || !this.threatens(ship.side, tr)) continue;
+        score = range_m; // missiles first, nearest first
+      } else if (o.kind === "ship" && db.targetFlags & SURFACE_TARGET && db.type === "gun") {
+        if (range_m > Math.min(1000 * db.maxRange_km, levelRange_m)) continue;
+        score = 1e6 + range_m;
+      } else {
+        continue;
+      }
+      if (score >= bestScore || !inFiringArc(ship, L, o)) continue;
+      if (L.fc && (!L.fc.active || !L.fc.canDetect(o, false))) continue;
+      best = o;
+      bestScore = score;
+    }
+    return best;
   }
 
   checkEnd() {
