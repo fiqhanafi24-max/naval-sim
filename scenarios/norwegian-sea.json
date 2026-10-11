@@ -1,6 +1,6 @@
 {
   "name": "Norwegian Sea, 2008",
-  "description": "A US surface action group meets a Northern Fleet group beyond radar range. Each side gets a maritime patrol aircraft report every five minutes. Both sides' air defences can stop a small salvo, so coordinate your Harpoons to arrive together, and expect the Sovremennys to do the same with their SS-N-22s.",
+  "description": "A US surface action group meets a Northern Fleet group beyond radar range. A P-3C Orion is on station to find them; an Il-38 is hunting you. Ship-launched salvos alone can't get through a modern group's defences, so coordinate them with the carrier's F/A-18 strike, and expect Tu-22M bombers with Kh-22s once the Il-38 has found you.",
   "seed": 2008,
   "camera": { "lat_deg": 65.75, "lon_deg": 2.6, "alt_m": 160000, "pitch_deg": -45 },
   "units": [
@@ -11,9 +11,29 @@
     { "side": "red", "class": "Pr 956 Sarych", "name": "Rastoropnyy", "lat_deg": 67.23, "lon_deg": 3.55, "heading_deg": 200, "speed_kts": 20 },
     { "side": "red", "class": "Pr 1155 Fregat", "name": "Admiral Kharlamov", "lat_deg": 67.25, "lon_deg": 3.30, "heading_deg": 200, "speed_kts": 20 }
   ],
-  "intel": {
-    "blue": { "source": "P-3C report", "interval_s": 300, "error_m": 2500, "firstAt_s": 5 },
-    "red": { "source": "Il-38 report", "interval_s": 300, "error_m": 2500, "firstAt_s": 120 }
+  "air": [
+    {
+      "side": "blue", "class": "P-3C III Orion", "name": "Pelican 1",
+      "lat_deg": 66.6, "lon_deg": 0.5, "alt_m": 5500, "heading_deg": 45,
+      "home": { "lat_deg": 69.29, "lon_deg": 16.14 },
+      "mission": { "type": "patrol", "center": { "lat_deg": 66.9, "lon_deg": 1.2 }, "radius_km": 25, "alt_m": 5500 }
+    },
+    {
+      "side": "red", "class": "Il-38", "name": "Il-38 Kotlas",
+      "lat_deg": 68.0, "lon_deg": 5.5, "alt_m": 6000, "heading_deg": 220,
+      "home": { "lat_deg": 69.5, "lon_deg": 33.0 },
+      "mission": { "type": "patrol", "center": { "lat_deg": 67.7, "lon_deg": 4.0 }, "radius_km": 25, "alt_m": 6000 }
+    }
+  ],
+  "strikes": {
+    "blue": [
+      { "callsign": "Hornet 1", "class": "F/A-18E", "count": 4, "available": 1, "alt_m": 7000, "launchFraction": 0.5,
+        "from": { "lat_deg": 64.0, "lon_deg": -2.0 } }
+    ],
+    "red": [
+      { "callsign": "Backfire", "class": "Tu-22ME", "count": 3, "available": 1, "alt_m": 10000, "launchFraction": 0.6,
+        "notBefore_s": 600, "from": { "lat_deg": 69.5, "lon_deg": 12.0 } }
+    ]
   },
   "ai": {
     "blue": { "autoDefend": true, "weaponsFree": false },

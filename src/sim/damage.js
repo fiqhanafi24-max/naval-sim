@@ -52,7 +52,7 @@ export function damageFactor(table, level) {
 }
 
 export function targetSpan_m(target) {
-  return target.kind === "ship" ? target.db.length_m : 3;
+  return target.kind === "missile" ? 3 : target.db.length_m || 20;
 }
 
 /**

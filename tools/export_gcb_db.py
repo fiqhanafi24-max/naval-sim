@@ -21,6 +21,19 @@ SHIPS = [
     ("Pr 1155 Fregat", "Pr 1155 2007"),
 ]
 
+# (aircraft class, GCB table: "simpleair" for props/patrol, "air" for jets, setup name or None)
+AIRCRAFT = [
+    ("P-3C III Orion", "simpleair", None),
+    ("Il-38", "simpleair", None),
+    ("F/A-18E", "air", "SM1   2010"),
+    ("Tu-22ME", "air", None),
+]
+
+# Tu-22M3 anti-ship load: GCB2 has the launchers but no setup with Kh-22s
+AIRCRAFT_LOADOUTS = {
+    "Tu-22ME": {"0": [("Kh-22M", 2)], "1": [("Kh-22M", 1)]},
+}
+
 # Magazine contents per launcher id, replacing the setup's loadout. GCB models each Mk-41
 # cell (and the Mk-13 arm) as a launcher reloaded from a magazine; we flatten that to one
 # launcher holding counts of one or more weapon types that share its reload cycle.
@@ -103,11 +116,12 @@ def export_missile(db, name, data):
     m = one(db, "select * from missile where DatabaseClass=?", name)
     if not m:
         return False
+    # a segment counts only if its range or altitude is positive (tcMissileDBObject::ReadSql)
     profile = []
     for i in range(1, 9):
+        if not (num(m["Rng%d_km" % i]) > 0 or num(m["Alt%d_m" % i]) > 0):
+            continue
         g = m["GuidMode%d" % i]
-        if g in (None, "", ","):
-            break
         profile.append({
             "range_km": num(m["Rng%d_km" % i]),
             "alt_m": num(m["Alt%d_m" % i]),
@@ -213,11 +227,68 @@ def export_damage_effect(db, name, data):
         }
 
 
+def export_fit(db, cls, loadout, data, keep=None):
+    """Radars and weapon launchers fitted to a ship or aircraft class.
+
+    keep(kind, item_name) can drop weapons that aren't wanted for that platform.
+    """
+    sensors = []
+    for ps in rows(db, "select * from platform_sensor where DatabaseClass=?", cls):
+        rad = export_radar(db, ps["SensorClass"])
+        if rad:
+            data["radars"][rad["name"]] = rad
+            sensors.append({"name": rad["name"], "mountAz_deg": num(ps["SensorAz"])})
+
+    launchers = []
+    for pl in rows(db, "select * from platform_launcher where DatabaseClass=? order by LauncherId", cls):
+        for item in loadout.get(str(pl["LauncherId"])) or []:
+            if export_gun(db, item[0], data):
+                kind = "gun"
+            elif export_missile(db, item[0], data):
+                kind = "missile"
+                if any(seg["guidMode"] == 3 for seg in data["missiles"][item[0]]["profile"]):
+                    continue  # payload-deploying weapons (e.g. ASW rockets): not ported yet
+            else:
+                continue  # torpedoes, empty cells: not ported yet
+            if keep and not keep(kind, item[0]):
+                continue
+            fc = pl["FireControlSensor"] or None
+            if fc and fc not in data["radars"]:
+                fc = None
+            if fc is None and kind == "missile" and data["missiles"][item[0]]["needsFireControl"]:
+                # fall back to the first fire-control radar on the ship
+                fc = next((x["name"] for x in sensors
+                           if data["radars"][x["name"]]["maxFireControlTracks"] > 0), None)
+            # time between shots: single-round launchers (Mk-13, VLS cells) reload from the
+            # magazine before every shot; multi-round launchers just cycle
+            lc = one(db, "select * from launcher_configuration where DatabaseClass=? and ChildClass=?",
+                     pl["LauncherClass"], item[0])
+            cycle_s, capacity, load_s = 2.0, item[1], 0.0
+            if lc:
+                cycle_s = num(lc["CycleTime_s"], 2)
+                capacity = int(num(lc["ChildCapacity"], 1))
+                load_s = num(lc["LoadTime_s"])
+                if capacity == 1:
+                    cycle_s += load_s
+            launchers.append({
+                "id": int(pl["LauncherId"]),  # entries with the same id share one launcher arm
+                "kind": kind,
+                "description": pl["Description"],
+                "item": item[0], "count": item[1], "cycle_s": round(cycle_s, 2),
+                "capacity": capacity, "reload_s": load_s,
+                "firingArc_deg": num(pl["FiringArc_deg"]), "az_deg": num(pl["Az"]),
+                "el_deg": num(pl["El"]),
+                "fireControl": fc,
+            })
+
+    return sensors, launchers
+
+
 def main(db_path, out_path):
     db = sqlite3.connect(db_path)
     db.text_factory = lambda b: b.decode("utf-8", errors="replace")
     data = {"source": "GCB2 database (c) 2014 gcblue, BSD-3-Clause",
-            "ships": {}, "radars": {}, "missiles": {}, "guns": {}, "warheads": {},
+            "ships": {}, "aircraft": {}, "radars": {}, "missiles": {}, "guns": {}, "warheads": {},
             "damageEffects": {}, "signatures": {}}
 
     for cls, setup_name in SHIPS:
@@ -227,52 +298,7 @@ def main(db_path, out_path):
                    for r in rows(db, "select * from launcher_loadout where DatabaseClass=?", setup["LauncherLoadout"])}
         loadout.update(MAGAZINE_OVERRIDES.get(cls, {}))
 
-        sensors = []
-        for ps in rows(db, "select * from platform_sensor where DatabaseClass=?", cls):
-            rad = export_radar(db, ps["SensorClass"])
-            if rad:
-                data["radars"][rad["name"]] = rad
-                sensors.append({"name": rad["name"], "mountAz_deg": num(ps["SensorAz"])})
-
-        launchers = []
-        for pl in rows(db, "select * from platform_launcher where DatabaseClass=? order by LauncherId", cls):
-            for item in loadout.get(str(pl["LauncherId"])) or []:
-                if export_gun(db, item[0], data):
-                    kind = "gun"
-                elif export_missile(db, item[0], data):
-                    kind = "missile"
-                    if any(seg["guidMode"] == 3 for seg in data["missiles"][item[0]]["profile"]):
-                        continue  # payload-deploying weapons (e.g. ASW rockets): not ported yet
-                else:
-                    continue  # torpedoes, empty cells: not ported yet
-                fc = pl["FireControlSensor"] or None
-                if fc and fc not in data["radars"]:
-                    fc = None
-                if fc is None and kind == "missile" and data["missiles"][item[0]]["needsFireControl"]:
-                    # fall back to the first fire-control radar on the ship
-                    fc = next((x["name"] for x in sensors
-                               if data["radars"][x["name"]]["maxFireControlTracks"] > 0), None)
-                # time between shots: single-round launchers (Mk-13, VLS cells) reload from the
-                # magazine before every shot; multi-round launchers just cycle
-                lc = one(db, "select * from launcher_configuration where DatabaseClass=? and ChildClass=?",
-                         pl["LauncherClass"], item[0])
-                cycle_s, capacity, load_s = 2.0, item[1], 0.0
-                if lc:
-                    cycle_s = num(lc["CycleTime_s"], 2)
-                    capacity = int(num(lc["ChildCapacity"], 1))
-                    load_s = num(lc["LoadTime_s"])
-                    if capacity == 1:
-                        cycle_s += load_s
-                launchers.append({
-                    "id": int(pl["LauncherId"]),  # entries with the same id share one launcher arm
-                    "kind": kind,
-                    "description": pl["Description"],
-                    "item": item[0], "count": item[1], "cycle_s": round(cycle_s, 2),
-                    "capacity": capacity, "reload_s": load_s,
-                    "firingArc_deg": num(pl["FiringArc_deg"]), "az_deg": num(pl["Az"]),
-                    "el_deg": num(pl["El"]),
-                    "fireControl": fc,
-                })
+        sensors, launchers = export_fit(db, cls, loadout, data)
 
         # gun ammunition below decks, used to reload mounts (missile totals are set above)
         gun_items = {l["item"] for l in launchers if l["kind"] == "gun"}
@@ -294,9 +320,39 @@ def main(db_path, out_path):
             "sensors": sensors, "launchers": launchers, "magazine": magazine,
         }
 
+    for cls, table, setup_name in AIRCRAFT:
+        a = one(db, "select * from %s where DatabaseClass=?" % table, cls)
+        loadout = {}
+        if setup_name:
+            setup = one(db, "select * from platform_setup where DatabaseClass=? and SetupName=?", cls, setup_name)
+            loadout = {str(r["LauncherId"]): [(r["Item"], int(r["Quantity"]))]
+                       for r in rows(db, "select * from launcher_loadout where DatabaseClass=?", setup["LauncherLoadout"])}
+        loadout.update(AIRCRAFT_LOADOUTS.get(cls, {}))
+        # anti-ship missiles only: air-to-air weapons and aircraft guns aren't ported yet
+        sensors, launchers = export_fit(
+            db, cls, loadout, data,
+            keep=lambda kind, item: kind == "missile" and data["missiles"][item]["targetFlags"] == 1)
+        export_signature(db, a["RCS_Model"], data["signatures"])
+        export_damage_effect(db, a["DamageEffect"], data)
+        max_kts = num(a["MaxSpeed_kts"])
+        data["aircraft"][cls] = {
+            "name": cls, "country": a["Country"], "setup": setup_name,
+            "maxSpeed_kts": max_kts,
+            # GCB2 jets fly an aero model; we use a fixed cruise speed instead
+            "cruiseSpeed_kts": round(max_kts * (0.55 if table == "air" else 0.8)),
+            "accel_ktsps": num(a["Accel_ktsps"], 5), "turnRate_degps": num(a["TurnRate_degps"], 5),
+            "maxAlt_m": num(a["MaxAltitude_m"], 10000), "climbRate_mps": num(a["ClimbRate_mps"], 15),
+            "fuel_kg": num(a["FuelCapacity_kg"]), "fuelRate_kgps": num(a["FuelRate_kgps"]),
+            "rcs_dBsm": num(a["RCS_dBsm"]), "rcsModel": a["RCS_Model"] or None,
+            "effectiveHeight_m": num(a["EffectiveHeight_m"]) or 3,
+            "length_m": 20,
+            "damageEffect": a["DamageEffect"],
+            "sensors": sensors, "launchers": launchers,
+        }
+
     with open(out_path, "w") as f:
         json.dump(data, f, indent=1)
-    for k in ("ships", "radars", "missiles", "guns", "warheads", "damageEffects", "signatures"):
+    for k in ("ships", "aircraft", "radars", "missiles", "guns", "warheads", "damageEffects", "signatures"):
         print("%-14s %d" % (k, len(data[k])))
 
 

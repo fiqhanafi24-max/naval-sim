@@ -1,6 +1,7 @@
 // Simulation world: object registry, per-side track picture, launches, detonations and a
 // simple computer opponent. No DOM access, so it can run headless (tests, a future server).
 
+import { Aircraft } from "./aircraft.js";
 import { Atmosphere } from "./atmosphere.js";
 import { Round, inFiringArc } from "./ballistic.js";
 import { calculateDamage, applyDamage } from "./damage.js";
@@ -10,7 +11,10 @@ import { Random } from "./random.js";
 import { Ship } from "./ship.js";
 
 export const SIDES = ["blue", "red"];
-const STALE_S = { ship: 120, missile: 10 };
+// tracks go stale (still dead-reckoned, not engaged by defences) then age out (deleted),
+// as tcSensorMapTrack's surface/missile/air Stale and AgeOut times
+const STALE_S = { ship: 120, missile: 15, aircraft: 30 };
+const AGE_OUT_S = { ship: 1800, missile: 40, aircraft: 300 };
 const AI_INTERVAL_S = 1;
 const MAX_SAMS_PER_THREAT = 2;
 
@@ -50,6 +54,9 @@ export class World {
     this.nextAi = 0;
     this.intel = {};
     this.ai = scenario.ai || {};
+    // flights that appear during the scenario, and strike packages each side can call in
+    this.pendingFlights = (scenario.air || []).map((f) => ({ ...f }));
+    this.strikes = { blue: [], red: [], ...JSON.parse(JSON.stringify(scenario.strikes || {})) };
     this.over = null;
 
     for (const u of scenario.units) {
@@ -80,11 +87,60 @@ export class World {
     return [...this.objects.values()].filter((o) => o.kind === "missile" && !o.dead);
   }
 
+  aircraft(side) {
+    return [...this.objects.values()].filter((o) => o.kind === "aircraft" && !o.dead && (!side || o.side === side));
+  }
+
+  // ---------------------------------------------------------------- aircraft
+
+  /** Spawn a flight of `count` aircraft from spec {side, class, name, count, lat_deg, lon_deg, ...}. */
+  spawnFlight(spec) {
+    const db = this.data.aircraft[spec.class];
+    if (!db) throw new Error(`Unknown aircraft class: ${spec.class}`);
+    const out = [];
+    for (let i = 0; i < (spec.count || 1); i++) {
+      // fly in loose formation, 2 km apart
+      const p = offset({ lat: spec.lat_deg * DEG, lon: spec.lon_deg * DEG }, (spec.heading_deg || 0) * DEG + Math.PI / 2, 2000 * i);
+      const name = spec.count > 1 ? `${spec.name || db.name} ${i + 1}` : spec.name || db.name;
+      out.push(this.add(new Aircraft(this, db, { ...spec, name, lat_deg: p.lat / DEG, lon_deg: p.lon / DEG })));
+    }
+    return out;
+  }
+
+  /**
+   * Send a strike package against a track.
+   * @param {number} index which of the side's packages (scenario.strikes[side])
+   */
+  callStrike(side, index, targetId) {
+    const pkg = this.strikes[side][index];
+    const track = this.getTrack(side, targetId);
+    if (!pkg || pkg.available <= 0) return { ok: false, reason: "no strike package available" };
+    if (!track || track.kind !== "ship") return { ok: false, reason: "no surface track" };
+    pkg.available--;
+    const from = { lat: pkg.from.lat_deg * DEG, lon: pkg.from.lon_deg * DEG };
+    this.spawnFlight({
+      side, class: pkg.class, name: pkg.callsign, count: pkg.count,
+      lat_deg: pkg.from.lat_deg, lon_deg: pkg.from.lon_deg, alt_m: pkg.alt_m,
+      heading_deg: bearing(from, track) / DEG, home: pkg.from,
+      mission: { type: "strike", targetId, alt_m: pkg.alt_m, launchFraction: pkg.launchFraction },
+    });
+    this.log(side, `${pkg.count} x ${pkg.class} (${pkg.callsign}) launched against ${track.className}`, "launch");
+    return { ok: true };
+  }
+
+  recoverAircraft(a) {
+    a.dead = true;
+    this.objects.delete(a.id);
+    for (const side of SIDES) this.tracks[side].delete(a.id);
+    this.log(a.side, `${a.name} has left the area`, "info");
+  }
+
   enemy(side) {
     return side === "blue" ? "red" : "blue";
   }
 
   log(side, text, kind = "info") {
+    this.eventSeq = (this.eventSeq || 0) + 1;
     this.events.push({ t: this.t, side, text, kind });
     if (this.events.length > 500) this.events.shift();
   }
@@ -93,11 +149,23 @@ export class World {
     return this.tracks[side].get(id);
   }
 
+  /** A sensor track updated recently enough for defences to engage. */
+  isFresh(tr) {
+    return tr.error_m === 0 && this.t - tr.t < STALE_S[tr.kind];
+  }
+
   // ---------------------------------------------------------------- main loop
 
   step(dt) {
     this.t += dt;
     const t = this.t;
+
+    for (const f of this.pendingFlights) {
+      if (!f.spawned && t >= (f.at_s || 0)) {
+        f.spawned = true;
+        this.spawnFlight(f);
+      }
+    }
 
     for (const o of [...this.objects.values()]) {
       if (o.dead) continue;
@@ -129,12 +197,15 @@ export class World {
   }
 
   updateSensors(t) {
-    for (const ship of this.ships()) {
+    for (const ship of [...this.ships(), ...this.aircraft()]) {
       for (const radar of ship.radars) {
         if (!radar.active || t - radar.lastScan < radar.db.scanPeriod_s) continue;
         radar.lastScan = t;
+        // fire-control radars only refine existing tracks; search radars create them (tcRadar::UpdateTrackData)
+        const trackOnly = !radar.db.isSurveillance;
         for (const o of this.objects.values()) {
           if (o.dead || o.side === ship.side || o.kind === "round") continue;
+          if (trackOnly && !this.tracks[ship.side].has(o.id)) continue;
           if (radar.canDetect(o, true)) this.updateTrack(ship.side, o, radar.db.name, 0, this.measure(radar, o));
         }
       }
@@ -185,7 +256,7 @@ export class World {
     if (existing && existing.quality < quality && this.t - existing.t < 5) return;
     // intel tracks last until the next report is due; sensor tracks go stale quickly
     const intel = this.intel[side];
-    const life_s = error_m > 0 && intel ? intel.interval_s * 1.2 : STALE_S[o.kind];
+    const life_s = error_m > 0 && intel ? intel.interval_s * 1.2 : AGE_OUT_S[o.kind];
     const track = {
       id: o.id, kind: o.kind, className: o.db.name, side: o.side,
       lat: pos.lat, lon: pos.lon, alt: o.alt, heading: o.heading, pitch: o.pitch || 0,
@@ -200,7 +271,7 @@ export class World {
         this.log(side, `Inbound missile detected (${source})`, "threat");
       }
     } else if (!existing) {
-      this.log(side, `New contact: ${o.db.name} (${source})`, "contact");
+      this.log(side, `${o.kind === "aircraft" ? "Air contact" : "New contact"}: ${o.db.name} (${source})`, "contact");
     }
   }
 
@@ -310,10 +381,19 @@ export class World {
     if (target.damage >= 1) this.destroy(target, round);
   }
 
-  destroy(o, by) {
+  /** @param {string} [reason] how a platform was lost when no weapon caused it */
+  destroy(o, by, reason) {
     if (o.kind === "missile") {
       if (by && by.side !== o.side) this.log(by.side, `${by.label || by.db.name} intercepted ${o.db.name}`, "kill");
       this.removeMissile(o, null);
+      return;
+    }
+    if (o.kind === "aircraft") {
+      o.dead = true;
+      this.objects.delete(o.id);
+      for (const side of SIDES) this.tracks[side].delete(o.id);
+      this.log(o.side, `${o.name} ${reason || "has been shot down"}`, "lost");
+      if (by && by.side !== o.side) this.log(by.side, `${by.label || by.db.name} shot down ${o.db.name}`, "kill");
       return;
     }
     o.dead = true;
@@ -397,7 +477,20 @@ export class World {
   runAi(side) {
     const cfg = this.ai[side] || {};
     if (cfg.autoDefend !== false) this.airDefense(side);
-    if (cfg.weaponsFree) this.offense(side, cfg.salvo || 4);
+    if (cfg.weaponsFree) {
+      this.offense(side, cfg.salvo || 4);
+      this.aiStrike(side);
+    }
+  }
+
+  /** Send the first available strike package at the largest enemy ship the side has a track on. */
+  aiStrike(side) {
+    const idx = this.strikes[side].findIndex((p) => p.available > 0 && this.t >= (p.notBefore_s || 0));
+    if (idx < 0) return;
+    const target = [...this.tracks[side].values()]
+      .filter((tr) => tr.kind === "ship")
+      .sort((a, b) => (this.data.ships[b.className]?.length_m || 0) - (this.data.ships[a.className]?.length_m || 0))[0];
+    if (target) this.callStrike(side, idx, target.id);
   }
 
   /** Is a missile (position + heading) flying toward one of this side's ships? */
@@ -413,9 +506,10 @@ export class World {
     if (!own.length) return;
     const sams = this.missiles().filter((m) => m.side === side && isAntiAir(m.db));
     for (const tr of this.tracks[side].values()) {
-      if (tr.kind !== "missile") continue;
+      // inbound missiles, and any hostile aircraft within SAM reach
+      if ((tr.kind !== "missile" && tr.kind !== "aircraft") || !this.isFresh(tr)) continue;
       const threat = predict(tr, this.t);
-      if (!this.threatens(side, threat)) continue;
+      if (tr.kind === "missile" && !this.threatens(side, threat)) continue;
       let inFlight = sams.filter((m) => m.intendedTarget === tr.id).length;
       const shooters = [...own].sort((a, b) => groundRange_m(a, threat) - groundRange_m(b, threat));
       for (const ship of shooters) {
@@ -434,7 +528,7 @@ export class World {
           const res = this.launch(ship, i, tr.id);
           if (res.ok) {
             inFlight++;
-            this.log(side, `${ship.name} engaging inbound missile with ${db.name}`, "launch");
+            this.log(side, `${ship.name} engaging ${tr.kind === "aircraft" ? tr.className : "inbound missile"} with ${db.name}`, "launch");
             break;
           }
         }
@@ -472,7 +566,7 @@ export class World {
    */
   gunnery(side) {
     const t = this.t;
-    const tracks = [...this.tracks[side].values()].filter((tr) => tr.error_m === 0);
+    const tracks = [...this.tracks[side].values()].filter((tr) => this.isFresh(tr));
     if (!tracks.length) return;
     for (const ship of this.ships(side)) {
       for (const L of ship.launchers) {
@@ -501,6 +595,9 @@ export class World {
         const reach_m = Math.min(1000 * db.maxRange_km, db.type === "autocannon" ? 8000 : Infinity);
         if (range_m > reach_m || !this.threatens(ship.side, tr)) continue;
         score = range_m; // missiles first, nearest first
+      } else if (o.kind === "aircraft" && db.targetFlags & AIR_TARGET) {
+        if (range_m > Math.min(1000 * db.maxRange_km, 8000)) continue;
+        score = 5e5 + range_m; // after missiles, before ships
       } else if (o.kind === "ship" && db.targetFlags & SURFACE_TARGET && db.type === "gun") {
         if (range_m > Math.min(1000 * db.maxRange_km, levelRange_m)) continue;
         score = 1e6 + range_m;

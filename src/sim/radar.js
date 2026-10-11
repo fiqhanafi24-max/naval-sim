@@ -110,7 +110,8 @@ export class Radar {
 
     const isMissile = target.kind === "missile";
     const isSurface = target.kind === "ship";
-    const isAir = isMissile && target.speed_kts < 600; // subsonic missiles count as air targets too
+    // aircraft are air targets; subsonic missiles count as air targets too
+    const isAir = target.kind === "aircraft" || (isMissile && target.speed_kts < 600);
 
     if (db.fov_deg < 360) {
       const look = p.heading + this.mountAz;

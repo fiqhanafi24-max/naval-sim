@@ -150,15 +150,31 @@ function check(name, ok, detail = "") {
 check("Blast overpressure falls with range", blastOverpressure(10, 100) > blastOverpressure(50, 100));
 check("Damage table interpolates", Math.abs(damageFactor([[0, 0], [10, 1]], 5) - 0.5) < 1e-6);
 
-// 5. Full scenario, blue fires Harpoons at first contact report
+// 5. SAMs against aircraft: an Il-38 orbiting over a Burke
+{
+  const w = new World(data, atmo, { seed: 500, units: [
+    { side: "blue", class: "Arleigh Burke DDGHM", lat_deg: 60, lon_deg: 0, heading_deg: 0, speed_kts: 10 },
+  ], air: [
+    { side: "red", class: "Il-38", name: "Il-38 test", lat_deg: 60.4, lon_deg: 0, alt_m: 6000, heading_deg: 180,
+      home: { lat_deg: 62, lon_deg: 0 }, mission: { type: "patrol", center: { lat_deg: 60, lon_deg: 0 }, radius_km: 15, alt_m: 6000 } },
+  ] });
+  for (let i = 0; i < 3000; i++) w.step(0.1);
+  const lost = w.events.some((e) => /shot down/.test(e.text));
+  check("SAMs shoot down a patrol aircraft overhead", lost, w.events.filter((e) => /shot down|engaging Il-38/.test(e.text)).map((e) => e.text).slice(0, 3).join(" | "));
+}
+
+// 6. Full scenario: blue attacks a Sovremenny with ship Harpoons and the Hornet strike together
 {
   const w = new World(data, atmo, scenario);
   let ordered = false;
+  let firstContact = null;
   for (let i = 0; i < 36000 && !w.over; i++) {
     w.step(0.1);
-    if (!ordered && w.tracks.blue.size >= 3) {
-      // coordinated attack on a Sovremenny, the ships carrying anti-ship missiles
-      const target = [...w.tracks.blue.values()].find((t) => t.className === "Pr 956 Sarych");
+    const shipTracks = [...w.tracks.blue.values()].filter((t) => t.kind === "ship" && t.error_m === 0);
+    if (firstContact == null && shipTracks.length) firstContact = w.t;
+    if (!ordered && shipTracks.length >= 3) {
+      const target = shipTracks.find((t) => t.className === "Pr 956 Sarych");
+      w.callStrike("blue", 0, target.id);
       ordered = w.orderGroupSalvo("blue", target.id, 4).ok;
     }
   }
@@ -167,13 +183,15 @@ check("Damage table interpolates", Math.abs(damageFactor([[0, 0], [10, 1]], 5) -
   check("Full scenario runs without errors", true, `t=${(w.t / 60).toFixed(1)} min, ${all.map(fmt).join("; ")}`);
   const count = (re) => w.events.filter((e) => re.test(e.text)).length;
   const asmFired = w.events.reduce((n, e) => n + Number((e.text.match(/fired (\d+) x/) || [0, 0])[1]), 0);
-  const samsFired = count(/engaging inbound missile/);
+  const samsFired = count(/engaging (inbound missile|.*with)/);
+  check("P-3C radar finds the enemy group within 10 minutes", firstContact != null && firstContact < 600, firstContact == null ? "never" : `${(firstContact / 60).toFixed(1)} min`);
   check("Blue's coordinated attack launches from all three ships (no 'salvo stopped')", count(/salvo stopped/) === 0 && count(/^USS .* fired \d+ x/) === 3, `${asmFired} anti-ship missiles fired in total`);
-  // balance is a scenario-design question, not a physics check: report it rather than pass/fail
+  check("Hornet strike reaches launch range and fires", count(/^Hornet 1 \d fired/) > 0, `${count(/^Hornet 1 \d fired/)} aircraft fired`);
+  check("Tu-22M raid reaches launch range and fires", count(/^Backfire \d fired/) > 0, `${count(/^Backfire \d fired/)} aircraft fired`);
   const intercepts = count(/intercepted/);
-  lines.push(`INFO Scenario outcome: ${all.filter((o) => o.damage > 0).map(fmt).join("; ") || "no ship damaged"}; ${intercepts} missiles intercepted`);
-  check("SAM expenditure is reasonable (at most 4 per inbound missile)", samsFired <= 4 * asmFired, `${samsFired} SAMs vs ${asmFired} anti-ship missiles`);
-  check("No intel contact is re-announced every report", count(/New contact/) <= 8, `${count(/New contact/)} 'New contact' events`);
+  lines.push(`INFO Scenario outcome: ${all.filter((o) => o.damage > 0).map(fmt).join("; ") || "no ship damaged"}; ${intercepts} missiles intercepted; ${count(/shot down/) / 2} aircraft shot down`);
+  check("SAM expenditure is reasonable (at most 4 per anti-ship missile)", samsFired <= 4 * asmFired, `${samsFired} SAMs vs ${asmFired} anti-ship missiles`);
+  check("Surface contacts aren't re-announced every radar sweep", count(/New contact/) <= 8, `${count(/New contact/)} 'New contact' events`);
   results.events = w.events.map((e) => `${(e.t / 60).toFixed(1).padStart(5)}m [${e.side}] ${e.text}`);
   lines.push("", "Event log:", ...results.events);
 }

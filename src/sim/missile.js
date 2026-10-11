@@ -5,8 +5,6 @@
 //  - a seeker that has not yet acquired steers on the launching side's track of its target
 //    (stands in for GCB2's SEEKERACQUIRE / command-handoff logic);
 //  - collision with a ship uses its length/beam/height box instead of the 3D model mesh;
-//  - command-only missiles switch to intercept pitch in the last 15 s (otherwise ESSM's
-//    12,000 m altitude hold flies it over sea-skimmers until the motor burns out);
 //  - a tracking seeker coasts on its last track for up to 3 s when it briefly loses the target.
 
 import { Radar } from "./radar.js";
@@ -18,7 +16,6 @@ import {
 const GM_COMMAND = 0, GM_NAV = 1, GM_SENSOR = 2;
 const AM_ASL = 0, AM_AGL = 1, AM_INTERCEPT = 2, AM_DATUM = 3, AM_INTERCEPT_HIGH = 4, AM_ASL_LOFT = 5;
 const IGNORE_ALT = -9999;
-const TERMINAL_COMMAND_S = 15;
 const SEEKER_COAST_S = 3;
 
 let missileCounter = 0;
@@ -223,10 +220,8 @@ export class Missile {
         const track = world.getTrack(this.side, this.intendedTarget);
         if (track) {
           interceptPitch = this.steerToward(predict(track, t), true);
-          // command-only missiles (e.g. ESSM) fly the terminal phase on intercept pitch
-          const terminal = this.segment === this.profile.length - 1 && this.interceptTime < TERMINAL_COMMAND_S;
           useInterceptPitch =
-            terminal || seg.altMode === AM_INTERCEPT || (seg.altMode === AM_INTERCEPT_HIGH && interceptPitch > 0);
+            seg.altMode === AM_INTERCEPT || (seg.altMode === AM_INTERCEPT_HIGH && interceptPitch > 0);
         } else if (this.interceptTime < 9990) {
           this.goalHeading = bearing(this, this.waypoint);
           this.rangeToObjective_km = groundRange_m(this, this.waypoint) / 1000;
@@ -305,8 +300,13 @@ export class Missile {
       this.goalPitch = 0;
     }
 
-    // advance to the next flight-profile segment
-    if (this.segment < this.profile.length - 1 && this.rangeToObjective_km < seg.range_km) {
+    // force level flight for the first 0.5 s for air-launched missiles
+    if (this.flightTime < 0.5 && this.alt > 50) {
+      this.goalHeading = this.heading;
+      this.goalPitch = this.pitch;
+      this.goalAlt = IGNORE_ALT;
+    } else if (this.segment < this.profile.length - 1 && this.rangeToObjective_km < seg.range_km) {
+      // advance to the next flight-profile segment
       this.segment++;
       const next = this.profile[this.segment];
       if (next.guidMode === GM_SENSOR && this.seeker && !this.seeker.active) {
@@ -379,6 +379,7 @@ export class Missile {
     const f = this.db.targetFlags;
     if (o.kind === "ship") return (f & 1) !== 0;
     if (o.kind === "missile") return (f & 8) !== 0 || (f & 2) !== 0;
+    if (o.kind === "aircraft") return (f & 2) !== 0;
     return false;
   }
 

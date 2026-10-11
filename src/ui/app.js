@@ -53,18 +53,27 @@ const COLORS = {
   white: Cesium.Color.WHITE,
 };
 
-/** NTDS-style symbols drawn on canvas: friendly = circle/square, hostile = diamond. */
+/**
+ * NTDS-style symbols drawn on canvas. Friendly: circle (ship), square (missile), upper
+ * semicircle (aircraft). Hostile: diamond (ship, missile), upper chevron (aircraft).
+ */
 function symbol(side, kind) {
   const c = document.createElement("canvas");
-  const s = kind === "ship" ? 28 : 16;
+  const s = kind === "ship" ? 28 : kind === "aircraft" ? 22 : 16;
   c.width = c.height = s;
   const g = c.getContext("2d");
-  g.lineWidth = kind === "ship" ? 2.5 : 2;
+  g.lineWidth = kind === "missile" ? 2 : 2.5;
   g.strokeStyle = side === PLAYER ? "#4da3ff" : "#ff5a52";
   g.fillStyle = side === PLAYER ? "rgba(77,163,255,0.25)" : "rgba(255,90,82,0.25)";
   g.beginPath();
   const m = s / 2;
   const r = s / 2 - 3;
+  if (kind === "aircraft") {
+    if (side === PLAYER) g.arc(m, m + r / 2, r, Math.PI, 0);
+    else { g.moveTo(m - r, m + r / 2); g.lineTo(m, m - r / 2); g.lineTo(m + r, m + r / 2); }
+    g.stroke();
+    return c;
+  }
   if (side === PLAYER) {
     if (kind === "ship") g.arc(m, m, r, 0, Math.PI * 2);
     else g.rect(m - r, m - r, 2 * r, 2 * r);
@@ -76,7 +85,7 @@ function symbol(side, kind) {
   return c;
 }
 const SYMBOLS = {};
-for (const side of ["blue", "red"]) for (const kind of ["ship", "missile"]) SYMBOLS[`${side}-${kind}`] = symbol(side, kind);
+for (const side of ["blue", "red"]) for (const kind of ["ship", "missile", "aircraft"]) SYMBOLS[`${side}-${kind}`] = symbol(side, kind);
 
 const pos = (o, extra = 0) => Cesium.Cartesian3.fromRadians(o.lon, o.lat, Math.max(o.alt || 0, 0) + extra);
 
@@ -129,6 +138,22 @@ function missileEntity(key, o, side) {
   return e;
 }
 
+/** Aircraft (own, or hostile tracks): air symbol with name and flight level. */
+function airEntity(key, o, side, isTrack) {
+  const e = upsert(key, () => ({
+    billboard: { image: SYMBOLS[`${side}-aircraft`], disableDepthTestDistance: Number.POSITIVE_INFINITY },
+    label: {
+      text: "", font: "11px sans-serif", fillColor: COLORS[side], outlineColor: Cesium.Color.BLACK, outlineWidth: 3,
+      style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -18),
+      disableDepthTestDistance: Number.POSITIVE_INFINITY,
+    },
+  }));
+  e.position = pos(o);
+  e.label.text = `${isTrack ? o.className : o.name}  FL${String(Math.round(o.alt / 30.48)).padStart(3, "0")}`;
+  e._objId = o.id;
+  return e;
+}
+
 /** Gun rounds and close-in-weapon bursts: small tracer dots, no label. */
 function roundEntity(key, o) {
   const e = upsert(key, () => ({
@@ -163,6 +188,7 @@ function renderGlobe() {
     if (o.side === PLAYER || showTruth) {
       if (o.kind === "ship") shipEntity(`o${o.id}`, o, o.side, false);
       else if (o.kind === "round") roundEntity(`o${o.id}`, o);
+      else if (o.kind === "aircraft") airEntity(`o${o.id}`, o, o.side, false);
       else if (!o.dead) missileEntity(`o${o.id}`, o, o.side);
     }
   }
@@ -173,6 +199,8 @@ function renderGlobe() {
       if (tr.kind === "ship") {
         shipEntity(`t${tr.id}`, view, tr.side, true);
         if (tr.error_m > 0) ring(`u${tr.id}`, view, 2 * tr.error_m, COLORS.amber.withAlpha(0.8), true);
+      } else if (tr.kind === "aircraft") {
+        airEntity(`t${tr.id}`, view, tr.side, true);
       } else {
         missileEntity(`t${tr.id}`, view, tr.side);
       }
@@ -208,13 +236,13 @@ function renderGlobe() {
   if (viewer.trackedEntity !== follow) viewer.trackedEntity = follow;
 }
 
-// picking: click a friendly ship to select it
+// picking: click a friendly ship or aircraft to select it
 new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas).setInputAction((click) => {
   const picked = viewer.scene.pick(click.position);
   const e = picked && picked.id;
   if (e && e._objId != null) {
     const o = world.get(e._objId);
-    if (o && o.side === PLAYER && o.kind === "ship") select(o.id);
+    if (o && o.side === PLAYER && (o.kind === "ship" || o.kind === "aircraft")) select(o.id);
   }
 }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
@@ -234,36 +262,54 @@ let detailKey = "";
 function renderPanels(force = false) {
   $("clock").textContent = fmtTime(world.t);
 
-  $("unitList").innerHTML = [...world.objects.values()]
-    .filter((o) => o.kind === "ship" && o.side === PLAYER)
-    .map((o) => `
+  const own = [...world.objects.values()].filter((o) => o.side === PLAYER && (o.kind === "ship" || o.kind === "aircraft"));
+  const unitRow = (o) => {
+    const isAir = o.kind === "aircraft";
+    const level = isAir ? o.fuelFraction : 1 - o.damage;
+    const color = isAir ? (level < 0.3 ? "var(--amber)" : "var(--blue)") : o.damage > 0.5 ? "var(--red)" : o.damage > 0 ? "var(--amber)" : "var(--green)";
+    return `
       <div class="unit ${o.id === selectedId ? "sel" : ""}" data-id="${o.id}">
         <div class="n">${o.name}${o.dead ? " — sunk" : ""}</div>
-        <div class="c">${o.db.name}</div>
-        <div class="bar"><i style="width:${100 - o.damage * 100}%;background:${o.damage > 0.5 ? "var(--red)" : o.damage > 0 ? "var(--amber)" : "var(--green)"}"></i></div>
-      </div>`)
-    .join("");
+        <div class="c">${o.db.name}${isAir ? ` · ${o.status}` : ""}</div>
+        <div class="bar" title="${isAir ? "fuel" : "condition"}"><i style="width:${100 * level}%;background:${color}"></i></div>
+      </div>`;
+  };
+  const ownAir = own.filter((o) => o.kind === "aircraft");
+  $("unitList").innerHTML =
+    own.filter((o) => o.kind === "ship").map(unitRow).join("") +
+    (ownAir.length ? `<h2 style="margin-top:10px">Aircraft</h2>${ownAir.map(unitRow).join("")}` : "");
 
-  const o = world.get(selectedId);
-  if (!o) return;
+  let o = world.get(selectedId);
+  if (!o) {
+    // selected aircraft left the area or was lost: fall back to the first ship
+    o = own.find((u) => u.kind === "ship");
+    if (!o) return;
+    selectedId = o.id;
+    force = true;
+  }
+  const isAir = o.kind === "aircraft";
   const contacts = [...world.tracks[PLAYER].values()].filter((t) => t.kind === "ship");
+  const strikes = world.strikes[PLAYER].map((p, i) => ({ ...p, i })).filter((p) => p.available > 0);
   // rebuild the detail panel only when its structure changes, so inputs keep focus
   // anti-ship stock decides whether fire buttons show; other counts are updated in place below
   const asmLeft = o.launchers.filter((l) => l.count > 0 && isAntiShip(data.missiles[l.item])).length;
-  const key = [o.id, o.dead, contacts.map((c) => c.id).join(","), asmLeft].join("|");
+  const key = [o.id, o.dead, contacts.map((c) => c.id).join(","), asmLeft, strikes.map((p) => p.available).join(","), o.status].join("|");
   if (force || key !== detailKey) {
     detailKey = key;
-    const asm = o.launchers.filter((l) => l.count > 0 && isAntiShip(data.missiles[l.item]));
+    const asm = isAir ? [] : o.launchers.filter((l) => l.count > 0 && isAntiShip(data.missiles[l.item]));
     $("detail").innerHTML = `
       <h3>${o.name}</h3>
-      <div class="sub">${o.db.name} · ${o.db.country}</div>
+      <div class="sub">${o.db.name} · ${o.db.country}${isAir ? ` · ${o.status}` : ""}</div>
       <dl class="grid">
         <dt>Course</dt><dd id="dCourse"></dd>
         <dt>Speed</dt><dd id="dSpeed"></dd>
+        ${isAir ? '<dt>Altitude</dt><dd id="dAlt"></dd><dt>Fuel</dt><dd id="dFuel"></dd>' : ""}
         <dt>Damage</dt><dd id="dDamage"></dd>
-        <dt>Radars</dt><dd>${o.radars.map((r) => r.db.name).join(", ")}</dd>
+        <dt>Radars</dt><dd>${o.radars.map((r) => r.db.name).join(", ") || "none"}</dd>
       </dl>
-      ${o.dead ? "" : `
+      ${o.dead ? "" : isAir ? (o.status === "rtb" ? "" : `
+      <h2>Orders</h2>
+      <div class="orders"><button id="oRtb">Return to base</button></div>`) : `
       <h2>Orders</h2>
       <div class="orders">
         <label>Course °<input id="oCourse" type="number" min="0" max="359" value="${Math.round(o.goalHeading / DEG)}"></label>
@@ -284,15 +330,23 @@ function renderPanels(force = false) {
           <button class="fire" data-fire="4" data-target="${c.id}">Fire 4</button>
           <button class="fire" data-group="4" data-target="${c.id}" title="Every ship in range fires 4, so they arrive together">All ships: 4 each</button>
         </div>` : ""}
+        ${strikes.length ? `<div class="act">${strikes.map((p) => `
+          <button class="fire" data-strike="${p.i}" data-target="${c.id}" title="${p.count} x ${p.class} from off-map, ${p.available} package(s) left">Air strike: ${p.callsign}</button>`).join("")}
+        </div>` : ""}
       </div>`).join("");
     if ($("oGo")) {
       $("oGo").onclick = () => {
         o.order({ heading_deg: Number($("oCourse").value), speed_kts: Number($("oSpeed").value) });
       };
     }
+    if ($("oRtb")) $("oRtb").onclick = () => o.returnToBase("ordered");
   }
   $("dCourse").textContent = `${Math.round(o.heading / DEG).toString().padStart(3, "0")}°`;
-  $("dSpeed").textContent = `${o.speed_kts.toFixed(1)} kts`;
+  $("dSpeed").textContent = `${o.speed_kts.toFixed(isAir ? 0 : 1)} kts`;
+  if (isAir) {
+    $("dAlt").textContent = `${Math.round(o.alt)} m`;
+    $("dFuel").textContent = pct(o.fuelFraction);
+  }
   $("dDamage").textContent = pct(o.damage);
   $("dInv").innerHTML = Object.entries(o.inventory()).map(([k, v]) => `${k}: ${v}`).join("<br>");
   for (const c of contacts) {
@@ -309,10 +363,15 @@ $("unitList").addEventListener("click", (ev) => {
 });
 
 $("detail").addEventListener("click", (ev) => {
-  const b = ev.target.closest("button[data-fire], button[data-group]");
+  const b = ev.target.closest("button[data-fire], button[data-group], button[data-strike]");
   if (!b) return;
   const o = world.get(selectedId);
   const target = Number(b.dataset.target);
+  if (b.dataset.strike) {
+    const res = world.callStrike(PLAYER, Number(b.dataset.strike), target);
+    if (!res.ok) world.log(PLAYER, `Cannot launch strike: ${res.reason}`, "info");
+    return;
+  }
   if (b.dataset.group) {
     const res = world.orderGroupSalvo(PLAYER, target, Number(b.dataset.group));
     if (!res.ok) world.log(PLAYER, `Cannot fire: ${res.reason}`, "info");
@@ -323,11 +382,12 @@ $("detail").addEventListener("click", (ev) => {
   if (!res.ok) world.log(PLAYER, `${o.name}: cannot fire, ${res.reason}`, "info");
 });
 
-let logCount = -1;
+let logSeq = -1;
 function renderLog() {
+  // the event list is capped, so compare a running counter rather than its length
+  if (world.eventSeq === logSeq) return;
+  logSeq = world.eventSeq;
   const evs = world.events.filter((e) => e.side === PLAYER);
-  if (evs.length === logCount) return;
-  logCount = evs.length;
   const el = $("log");
   el.innerHTML = evs.slice(-200).map((e) => `<div class="ev ${e.kind}">${fmtTime(e.t)}  ${e.text}</div>`).join("");
   el.scrollTop = el.scrollHeight;

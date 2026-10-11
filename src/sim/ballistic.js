@@ -12,7 +12,7 @@ import {
   interceptData3D, range3D_m, velocity, wrapPi,
 } from "./geo.js";
 
-const TARGET_RADIUS_M = { missile: 0.4, ship: 10 };
+const TARGET_RADIUS_M = { missile: 0.4, aircraft: 3, ship: 10 };
 const AUTOCANNON_CHECK_M = 500;
 const MAX_ALONG_TRACK_ERROR_M = 50;
 const TARGET_WIDTH_GUESS_M = 20;
