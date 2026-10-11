@@ -19,6 +19,13 @@ SHIPS = [
     ("Oliver Hazard Perry FFGHM", "Oliver Hazard Perry 2008"),
     ("Pr 956 Sarych", "Pr 956 2007"),
     ("Pr 1155 Fregat", "Pr 1155 2007"),
+    # Falklands, 1982
+    ("Type 42 DDG Batch 1", "Type 42 B1 1982"),
+    ("Type 22 FF Batch 1", "Type 22 B1 1982"),
+    # Gulf of Sidra, 1986
+    ("Ticonderoga CG Baseline 1", "Tico B1 1984"),
+    ("Spruance DDG", "Spruance 1984"),
+    ("Pr 1234E Ovod-E (Libya)", "Pr 1234 Ovod-1"),
 ]
 
 # (aircraft class, GCB table: "simpleair" for props/patrol, "air" for jets, setup name or None)
@@ -27,11 +34,22 @@ AIRCRAFT = [
     ("Il-38", "simpleair", None),
     ("F/A-18E", "air", "SM1   2010"),
     ("Tu-22ME", "air", None),
+    ("Super Etendard M", "air", "SM1E  1979"),
+    ("A-6E", "air", "SM1   1979"),
 ]
 
 # Tu-22M3 anti-ship load: GCB2 has the launchers but no setup with Kh-22s
 AIRCRAFT_LOADOUTS = {
     "Tu-22ME": {"0": [("Kh-22M", 2)], "1": [("Kh-22M", 1)]},
+    # Argentine strikes in 1982 carried one Exocet and a drop tank
+    "Super Etendard M": {"2": []},
+}
+
+# Corrections to GCB2 flight profiles: {missile: {segment index: fields}}
+PROFILE_FIXES = {
+    # AM-39 is active-radar homing like the MM-38, whose last segment uses its seeker;
+    # GCB2 stores 0 (command) here, which would steer it on the launching side's track
+    "AM-39 Exocet": {2: {"guidMode": 2}},
 }
 
 # Magazine contents per launcher id, replacing the setup's loadout. GCB models each Mk-41
@@ -43,6 +61,10 @@ MAGAZINE_OVERRIDES = {
     "Ticonderoga CG Baseline 4": {"0": [("RIM-66M", 60)], "1": [("RIM-162A", 32)], "2": None},
     # Mk-13 single-arm launcher fed from a 40-round magazine (36 SM-1MR + 4 Harpoon)
     "Oliver Hazard Perry FFGHM": {"2": [("RIM-66L", 36), ("RGM-84F Harpoon", 4)]},
+    # Phalanx was fitted to Type 42s only after the Falklands
+    "Type 42 DDG Batch 1": {"0": None, "1": None},
+    # the Libyan Nanuchka II's setup leaves its SS-N-2C launchers empty
+    "Pr 1234E Ovod-E (Libya)": {"0": [("P-15M Termit", 2)], "1": [("P-15M Termit", 2)]},
 }
 
 
@@ -110,6 +132,34 @@ def export_signature(db, name, out):
         out[name] = [num(s["Aspect%d" % a]) for a in range(0, 190, 10)]
 
 
+def export_optical(db, name):
+    o = one(db, "select * from optical where DatabaseClass=?", name)
+    if not o:
+        return None
+    return {
+        "name": name,
+        "refRange_km": num(o["RefRange_km"]),
+        "maxRange_km": num(o["MaxRange_km"]),
+        "fov_deg": num(o["FieldOfView_deg"], 360),
+        "scanPeriod_s": num(o["ScanPeriod_s"], 1),
+        "isIR": bool(int(num(o["IsIR"]))),
+        "isSurveillance": bool(int(num(o["IsSurveillance"]))),
+        "detectsSurface": bool(int(num(o["DetectsSurface"]))),
+        "detectsAir": bool(int(num(o["DetectsAir"]))),
+        "detectsMissile": bool(int(num(o["DetectsMissile"]))),
+        "nightFactor": num(o["NightFactor"], 1),
+    }
+
+
+def ir_fields(r):
+    """IR and optical signature columns shared by ships, aircraft and missiles."""
+    return {
+        "irSignature_dB": num(r["IRSignature_dB"]),
+        "irModel": r["IR_ModelA"] or None,
+        "opticalCrossSection_dBsm": num(r["OpticalCrossSection_dBsm"]),
+    }
+
+
 def export_missile(db, name, data):
     if name in data["missiles"]:
         return True
@@ -128,14 +178,21 @@ def export_missile(db, name, data):
             "altMode": int(num(m["AltMode%d" % i])),
             "guidMode": int(num(g)),
         })
+    for idx, fix in PROFILE_FIXES.get(name, {}).items():
+        profile[idx].update(fix)
     seeker = m["SensorClass"] or None
-    if seeker and seeker not in data["radars"]:
-        rad = export_radar(db, seeker)
-        if rad:
-            data["radars"][seeker] = rad
+    seeker_type = None
+    if seeker:
+        if seeker in data["radars"] or export_radar(db, seeker):
+            data["radars"].setdefault(seeker, export_radar(db, seeker))
+            seeker_type = "radar"
+        elif seeker in data["opticals"] or export_optical(db, seeker):
+            data["opticals"].setdefault(seeker, export_optical(db, seeker))
+            seeker_type = "optical"
         else:
-            seeker = None  # IR/optical seekers not ported yet
+            seeker = None  # ESM / anti-radiation seekers not ported yet
     export_signature(db, m["RCS_Model"], data["signatures"])
+    export_signature(db, m["IR_ModelA"], data["signatures"])
     data["missiles"][name] = {
         "name": name,
         "weight_kg": num(m["Weight_kg"]),
@@ -147,6 +204,7 @@ def export_missile(db, name, data):
         "detonationRange_m": num(m["DetonationRange_m"]),
         "rcs_dBsm": num(m["RCS_dBsm"]),
         "rcsModel": m["RCS_Model"] or None,
+        **ir_fields(m),
         "effectiveHeight_m": num(m["EffectiveHeight_m"]),
         "gMax": num(m["Gmax"]),
         "maxTurnRate_degps": num(m["MaxTurnRate_degps"]),
@@ -156,6 +214,7 @@ def export_missile(db, name, data):
         "sustThrust_N": num(m["SustThrust_N"]), "sustTime_s": num(m["SustTime_s"]),
         "shutdownSpeed_mps": num(m["ShutdownSpeed_mps"]),
         "seeker": seeker,
+        "seekerType": seeker_type,
         "needsFireControl": bool(int(num(m["NeedsFireControl"]))),
         "damageModel": m["DamageModel"],
         "damageEffect": m["DamageEffect"],
@@ -288,7 +347,7 @@ def main(db_path, out_path):
     db = sqlite3.connect(db_path)
     db.text_factory = lambda b: b.decode("utf-8", errors="replace")
     data = {"source": "GCB2 database (c) 2014 gcblue, BSD-3-Clause",
-            "ships": {}, "aircraft": {}, "radars": {}, "missiles": {}, "guns": {}, "warheads": {},
+            "ships": {}, "aircraft": {}, "radars": {}, "opticals": {}, "missiles": {}, "guns": {}, "warheads": {},
             "damageEffects": {}, "signatures": {}}
 
     for cls, setup_name in SHIPS:
@@ -300,21 +359,24 @@ def main(db_path, out_path):
 
         sensors, launchers = export_fit(db, cls, loadout, data)
 
-        # gun ammunition below decks, used to reload mounts (missile totals are set above)
-        gun_items = {l["item"] for l in launchers if l["kind"] == "gun"}
+        # ammunition below decks, used to reload launchers and gun mounts; skipped for
+        # launchers whose totals are set in MAGAZINE_OVERRIDES so nothing is counted twice
+        overridden = set(MAGAZINE_OVERRIDES.get(cls, {}))
+        reload_items = {l["item"] for l in launchers if str(l["id"]) not in overridden}
         magazine = {}
         for r in rows(db, "select * from magazine_loadout where DatabaseClass=?", setup["MagazineLoadout"]):
-            if r["Item"] in gun_items:
+            if r["Item"] in reload_items:
                 magazine[r["Item"]] = magazine.get(r["Item"], 0) + int(num(r["Quantity"]))
 
         export_signature(db, s["RCS_Model"], data["signatures"])
+        export_signature(db, s["IR_ModelA"], data["signatures"])
         export_damage_effect(db, s["DamageEffect"], data)
         data["ships"][cls] = {
             "name": cls, "country": s["Country"], "setup": setup_name,
             "maxSpeed_kts": num(s["MaxSpeed_kts"]), "accel_ktsps": num(s["Accel_ktsps"], 0.5),
             "turnRate_degps": num(s["TurnRate_degps"], 3),
             "length_m": num(s["Length_m"]), "beam_m": num(s["Beam_m"]), "draft_m": num(s["Draft_m"]),
-            "rcs_dBsm": num(s["RCS_dBsm"]), "rcsModel": s["RCS_Model"] or None,
+            "rcs_dBsm": num(s["RCS_dBsm"]), "rcsModel": s["RCS_Model"] or None, **ir_fields(s),
             "effectiveHeight_m": num(s["EffectiveHeight_m"]),
             "damageEffect": s["DamageEffect"],
             "sensors": sensors, "launchers": launchers, "magazine": magazine,
@@ -333,6 +395,7 @@ def main(db_path, out_path):
             db, cls, loadout, data,
             keep=lambda kind, item: kind == "missile" and data["missiles"][item]["targetFlags"] == 1)
         export_signature(db, a["RCS_Model"], data["signatures"])
+        export_signature(db, a["IR_ModelA"], data["signatures"])
         export_damage_effect(db, a["DamageEffect"], data)
         max_kts = num(a["MaxSpeed_kts"])
         data["aircraft"][cls] = {
@@ -343,7 +406,7 @@ def main(db_path, out_path):
             "accel_ktsps": num(a["Accel_ktsps"], 5), "turnRate_degps": num(a["TurnRate_degps"], 5),
             "maxAlt_m": num(a["MaxAltitude_m"], 10000), "climbRate_mps": num(a["ClimbRate_mps"], 15),
             "fuel_kg": num(a["FuelCapacity_kg"]), "fuelRate_kgps": num(a["FuelRate_kgps"]),
-            "rcs_dBsm": num(a["RCS_dBsm"]), "rcsModel": a["RCS_Model"] or None,
+            "rcs_dBsm": num(a["RCS_dBsm"]), "rcsModel": a["RCS_Model"] or None, **ir_fields(a),
             "effectiveHeight_m": num(a["EffectiveHeight_m"]) or 3,
             "length_m": 20,
             "damageEffect": a["DamageEffect"],
@@ -352,7 +415,7 @@ def main(db_path, out_path):
 
     with open(out_path, "w") as f:
         json.dump(data, f, indent=1)
-    for k in ("ships", "aircraft", "radars", "missiles", "guns", "warheads", "damageEffects", "signatures"):
+    for k in ("ships", "aircraft", "radars", "opticals", "missiles", "guns", "warheads", "damageEffects", "signatures"):
         print("%-14s %d" % (k, len(data[k])))
 
 

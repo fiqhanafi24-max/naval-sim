@@ -9,7 +9,7 @@
 <h1>Simulation checks</h1>
 <pre id="out">running…</pre>
 <script type="module">
-import { World } from "../src/sim/world.js";
+import { World, ammoLeft } from "../src/sim/world.js";
 import { Missile } from "../src/sim/missile.js";
 import { DEG, offset, range3D_m } from "../src/sim/geo.js";
 import { blastOverpressure, damageFactor } from "../src/sim/damage.js";
@@ -194,6 +194,40 @@ check("Damage table interpolates", Math.abs(damageFactor([[0, 0], [10, 1]], 5) -
   check("Surface contacts aren't re-announced every radar sweep", count(/New contact/) <= 8, `${count(/New contact/)} 'New contact' events`);
   results.events = w.events.map((e) => `${(e.t / 60).toFixed(1).padStart(5)}m [${e.side}] ${e.text}`);
   lines.push("", "Event log:", ...results.events);
+}
+
+// 7. Historical scenarios: run each to its time limit with a simple blue plan
+for (const id of ["falklands-1982", "sidra-1986"]) {
+  const sc = await fetch(`../scenarios/${id}.json`).then((r) => r.json());
+  const w = new World(data, atmo, sc);
+  let attacked = false;
+  const start = {};
+  for (const s of w.ships("blue")) start[s.id] = Object.fromEntries(s.launchers.map((L, i) => [i, ammoLeft(s, L)]));
+  for (let i = 0; i < (sc.endAt_s + 1) * 10 && !w.over; i++) {
+    w.step(0.1);
+    const tr = [...w.tracks.blue.values()].find((t) => t.kind === "ship");
+    if (!attacked && tr) {
+      attacked = true;
+      w.callStrike("blue", 0, tr.id);
+      w.orderGroupSalvo("blue", tr.id, 4);
+    }
+  }
+  const count = (re) => w.events.filter((e) => re.test(e.text)).length;
+  const ships = [...w.objects.values()].filter((o) => o.kind === "ship");
+  const fmt = (o) => `${o.name} ${(o.damage * 100).toFixed(0)}%${o.dead ? " SUNK" : ""}`;
+  check(`${sc.name}: runs to the end without errors`, !!w.over, `ended at ${(w.t / 60).toFixed(0)} min`);
+  if (id === "falklands-1982") {
+    check("Falklands: Super Étendards fire their Exocets", count(/^Super Étendard.* fired \d+ x AM-39/) > 0, `${count(/fired \d+ x AM-39/)} aircraft fired`);
+    const seaDart = w.ships("blue").concat(ships.filter((o) => o.side === "blue" && o.dead))
+      .filter((s) => s.db.name.startsWith("Type 42"))
+      .map((s) => start[s.id][0] - ammoLeft(s, s.launchers[0]));
+    lines.push(`INFO Falklands: Sea Darts fired per Type 42: ${seaDart.join(", ")}`);
+  } else {
+    check("Sidra: Nanuchkas fire SS-N-2C Styx", count(/fired \d+ x P-15M/) > 0, `${count(/fired \d+ x P-15M/)} salvos`);
+    check("Sidra: A-6E Intruders fire Harpoons", count(/^Intruder \d fired/) > 0, `${count(/^Intruder \d fired/)} aircraft fired`);
+  }
+  lines.push(`INFO ${sc.name} outcome: ${ships.map(fmt).join("; ")}; ${count(/intercepted/)} missiles intercepted`);
+  lines.push(`--- ${sc.name} event log`, ...w.events.map((e) => `${(e.t / 60).toFixed(1).padStart(5)}m [${e.side}] ${e.text}`), "");
 }
 
 document.getElementById("out").innerHTML = lines.join("\n");

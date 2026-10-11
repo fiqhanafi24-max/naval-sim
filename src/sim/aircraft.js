@@ -130,7 +130,13 @@ export class Aircraft {
     const asm = this.launchers.filter((l) => l.count > 0);
     if (!asm.length) return this.returnToBase(m.fired ? null : "no weapons");
     const reach_km = Math.min(...asm.map((l) => world.data.missiles[l.item].maxRange_km)) * (m.launchFraction ?? 0.6);
-    if (groundRange_m(this, datum) / 1000 > reach_km) return;
+    const range_km = groundRange_m(this, datum) / 1000;
+    // attack run: speed up before launch so boosterless missiles (e.g. AGM-84A) leave fast enough
+    // to pass GCB2's 20 s shutdown-speed check
+    if (range_km < 1.5 * reach_km) {
+      this.goalSpeed_kts = Math.min(0.85 * this.db.maxSpeed_kts, 1.4 * this.db.cruiseSpeed_kts);
+    }
+    if (range_km > reach_km || this.speed_kts < 0.95 * this.goalSpeed_kts) return;
     for (let i = 0; i < this.launchers.length; i++) {
       if (this.launchers[i].count > 0 && world.launch(this, i, m.targetId).ok) m.fired = (m.fired || 0) + 1;
     }

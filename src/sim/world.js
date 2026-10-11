@@ -26,6 +26,11 @@ export function isAntiShip(db) {
   return !!db && (db.targetFlags & SURFACE_TARGET) !== 0 && (db.targetFlags & (AIR_TARGET | MISSILE_TARGET)) === 0;
 }
 
+/** Rounds ready on the launcher plus those in the platform's magazine. */
+export function ammoLeft(platform, L) {
+  return L.count + (platform.magazine?.[L.item] || 0);
+}
+
 /** @param db missile record; undefined for guns, which have their own engagement logic */
 export function isAntiAir(db) {
   return !!db && (db.targetFlags & (AIR_TARGET | MISSILE_TARGET)) !== 0;
@@ -304,7 +309,12 @@ export class World {
   launch(ship, launcherIdx, targetId) {
     const L = ship.launchers[launcherIdx];
     if (!L || ship.dead) return { ok: false, reason: "no launcher" };
-    if (L.count <= 0) return { ok: false, reason: "out of ammunition" };
+    if (L.count <= 0) {
+      // reload the launcher from the magazine if there is one (e.g. Mk-26, Sea Dart)
+      if (!ship.reload || !ship.reload(L, this.t)) {
+        return { ok: false, reason: ammoLeft(ship, L) > 0 ? "launcher reloading" : "out of ammunition" };
+      }
+    }
     if (this.t - L.arm.lastFire < L.cycle_s) return { ok: false, reason: "launcher reloading" };
     const track = this.getTrack(ship.side, targetId);
     if (!track) return { ok: false, reason: "no track" };
@@ -415,7 +425,7 @@ export class World {
       .filter((i) => {
         const L = ship.launchers[i];
         const db = this.data.missiles[L.item];
-        return isAntiShip(db) && L.count > 0 && db.maxRange_km >= range_km;
+        return isAntiShip(db) && ammoLeft(ship, L) > 0 && db.maxRange_km >= range_km;
       });
   }
 
@@ -467,7 +477,7 @@ export class World {
           s.remaining = 0;
         }
       }
-      if (s.remaining > 0 && s.launchers.every((i) => ship.launchers[i].count <= 0)) s.remaining = 0;
+      if (s.remaining > 0 && s.launchers.every((i) => ammoLeft(ship, ship.launchers[i]) <= 0)) s.remaining = 0;
       if (s.remaining <= 0 && s.fired) {
         const tr = this.getTrack(ship.side, s.targetId);
         this.log(ship.side, `${ship.name} fired ${s.fired} x ${ship.launchers[s.launchers[0]].item} at ${tr ? tr.className : "target"}`, "launch");
@@ -522,7 +532,7 @@ export class World {
           .map((l, i) => i)
           .filter((i) => {
             const db = this.data.missiles[ship.launchers[i].item];
-            return isAntiAir(db) && ship.launchers[i].count > 0;
+            return isAntiAir(db) && ammoLeft(ship, ship.launchers[i]) > 0;
           })
           // longest-ranged weapon that can reach first
           .sort((a, b) => this.data.missiles[ship.launchers[b].item].maxRange_km - this.data.missiles[ship.launchers[a].item].maxRange_km);
@@ -618,7 +628,14 @@ export class World {
 
   checkEnd() {
     if (this.over) return;
+    if (this.scenario.endAt_s && this.t >= this.scenario.endAt_s) {
+      this.over = { loser: null, t: this.t };
+      for (const side of SIDES) this.log(side, "Time limit reached. Scenario over.", "info");
+      return;
+    }
     for (const side of SIDES) {
+      // a side fighting only with aircraft (e.g. Argentina in 1982) can't lose its ships
+      if (!this.scenario.units.some((u) => u.side === side)) continue;
       if (this.ships(side).length === 0) {
         this.over = { loser: side, t: this.t };
         this.log(side, `All ${side} ships lost. Scenario over.`, "lost");

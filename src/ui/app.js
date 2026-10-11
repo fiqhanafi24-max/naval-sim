@@ -1,7 +1,7 @@
 // Browser front end: CesiumJS globe + DOM panels around the headless World.
 /* global Cesium */
 
-import { World, isAntiShip } from "../sim/world.js";
+import { World, isAntiShip, ammoLeft } from "../sim/world.js";
 import { predict } from "../sim/missile.js";
 import { DEG, bearing, groundRange_m } from "../sim/geo.js";
 import { buildShipGltf } from "./models.js";
@@ -319,7 +319,7 @@ function renderGlobe() {
   if (sel && !sel.dead) {
     const rings = sel.radars.filter((r) => r.active).map((r) => r.nominalRange_km(40, 10));
     if (rings.length) ring("radar", sel, 1000 * Math.max(...rings), COLORS.blue.withAlpha(0.6), false);
-    const asm = sel.launchers.filter((l) => l.count > 0 && isAntiShip(data.missiles[l.item]));
+    const asm = sel.launchers.filter((l) => ammoLeft(sel, l) > 0 && isAntiShip(data.missiles[l.item]));
     if (asm.length) ring("asm", sel, 1000 * Math.max(...asm.map((l) => data.missiles[l.item].maxRange_km)), COLORS.amber.withAlpha(0.5), true);
   }
 
@@ -408,11 +408,11 @@ function renderPanels(force = false) {
   const strikes = world.strikes[PLAYER].map((p, i) => ({ ...p, i })).filter((p) => p.available > 0);
   // rebuild the detail panel only when its structure changes, so inputs keep focus
   // anti-ship stock decides whether fire buttons show; other counts are updated in place below
-  const asmLeft = o.launchers.filter((l) => l.count > 0 && isAntiShip(data.missiles[l.item])).length;
+  const asmLeft = o.launchers.filter((l) => ammoLeft(o, l) > 0 && isAntiShip(data.missiles[l.item])).length;
   const key = [o.id, o.dead, contacts.map((c) => c.id).join(","), asmLeft, strikes.map((p) => p.available).join(","), o.status].join("|");
   if (force || key !== detailKey) {
     detailKey = key;
-    const asm = isAir ? [] : o.launchers.filter((l) => l.count > 0 && isAntiShip(data.missiles[l.item]));
+    const asm = isAir ? [] : o.launchers.filter((l) => ammoLeft(o, l) > 0 && isAntiShip(data.missiles[l.item]));
     $("detail").innerHTML = `
       <h3>${o.name}</h3>
       <div class="sub">${o.db.name} · ${o.db.country}${isAir ? ` · ${o.status}` : ""}</div>
@@ -532,6 +532,21 @@ $("start").onclick = () => {
   running = true;
 };
 
+// scenario picker: reload the page with ?scenario=<id>
+fetch("scenarios/index.json")
+  .then((r) => r.json())
+  .then((list) => {
+    $("scenarioPick").innerHTML = list
+      .map((s) => `<option value="${s.id}" ${s.id === scenarioName ? "selected" : ""}>${s.name}</option>`)
+      .join("");
+    $("scenarioPick").onchange = (ev) => {
+      location.search = `?scenario=${encodeURIComponent(ev.target.value)}`;
+    };
+  })
+  .catch(() => {
+    $("scenarioPick").style.display = "none";
+  });
+
 let last = performance.now();
 let acc = 0;
 let lastPanel = 0;
@@ -554,10 +569,19 @@ function frame(now) {
     renderPanels();
     renderLog();
     if (world.over) {
-      const won = world.over.loser !== PLAYER;
       $("banner").style.display = "block";
-      $("banner").textContent = won ? "Victory: hostile force destroyed" : "Defeat: your force has been sunk";
-      $("banner").style.color = won ? "var(--green)" : "var(--red)";
+      if (world.over.loser == null) {
+        // time limit: report losses on both sides
+        const all = [...world.objects.values()].filter((o) => o.kind === "ship");
+        const lost = (side) => all.filter((o) => o.side === side && o.dead).length;
+        const own = all.filter((o) => o.side === PLAYER);
+        $("banner").textContent = `Time up: ${own.length - lost(PLAYER)} of ${own.length} ships afloat, ${lost("red")} enemy ships sunk`;
+        $("banner").style.color = lost(PLAYER) ? "var(--amber)" : "var(--green)";
+      } else {
+        const won = world.over.loser !== PLAYER;
+        $("banner").textContent = won ? "Victory: hostile force destroyed" : "Defeat: your force has been sunk";
+        $("banner").style.color = won ? "var(--green)" : "var(--red)";
+      }
     }
   }
   requestAnimationFrame(frame);

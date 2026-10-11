@@ -7,6 +7,7 @@
 //  - collision with a ship uses its length/beam/height box instead of the 3D model mesh;
 //  - a tracking seeker coasts on its last track for up to 3 s when it briefly loses the target.
 
+import { OpticalSensor } from "./optical.js";
 import { Radar } from "./radar.js";
 import {
   DEG, KTS_TO_MPS, MPS_TO_KTS, G_MPS2, advance, bearing, closestApproach, enu,
@@ -83,8 +84,9 @@ export class Missile {
     this.seekerMode = "off"; // off | search | acquire | track
     this.seekerTargetId = null;
     this.seekerSnap = null;
-    if (db.seeker && world.data.radars[db.seeker]) {
-      this.seeker = new Radar(world.data.radars[db.seeker], this);
+    const seekerDb = db.seekerType === "optical" ? world.data.opticals[db.seeker] : world.data.radars[db.seeker];
+    if (db.seeker && seekerDb) {
+      this.seeker = db.seekerType === "optical" ? new OpticalSensor(seekerDb, this) : new Radar(seekerDb, this);
       this.seeker.active = false;
       this.seeker.illuminator = fcRadar || null;
       if (fcRadar) {

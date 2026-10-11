@@ -75,6 +75,7 @@
   #brief .card { width: min(560px, calc(100% - 32px)); padding: 22px 24px; position: static; }
   #brief p { color: var(--text); }
   #brief ul { color: var(--muted); padding-left: 18px; }
+  #scenarioPick { width: 100%; margin: 4px 0 14px; background: #0c1828; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 7px 8px; font: inherit; }
   #banner { top: 40%; left: 50%; transform: translate(-50%, -50%); padding: 18px 28px; font-size: 20px; font-weight: 600; display: none; z-index: 5; }
   .muted { color: var(--muted); }
   @media (max-width: 900px) {
@@ -117,6 +118,7 @@
 <div id="brief">
   <div class="card panel">
     <h2>Scenario</h2>
+    <select id="scenarioPick" aria-label="Choose scenario"></select>
     <h3 id="briefTitle"></h3>
     <p id="briefText"></p>
     <ul>

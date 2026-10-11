@@ -1,0 +1,99 @@
+{
+  "name": "Falklands, 4 May 1982",
+  "description": "You command the Royal Navy's Type 42 picket line west of the carrier group. An Argentine SP-2H Neptune is reporting your positions. Super Étendards armed with single AM-39 Exocets will come in at wave-top height from the west, below your radar horizon until they fire. Your Sea Dart and Sea Wolf are your only defences; there are no Sea Harriers in this simulation yet. Survive two hours.",
+  "seed": 1982,
+  "endAt_s": 7200,
+  "camera": {
+    "lat_deg": -53.75,
+    "lon_deg": -57.3,
+    "alt_m": 120000,
+    "pitch_deg": -45
+  },
+  "units": [
+    {
+      "side": "blue",
+      "class": "Type 42 DDG Batch 1",
+      "name": "HMS Sheffield",
+      "lat_deg": -53.07,
+      "lon_deg": -56.93,
+      "heading_deg": 270,
+      "speed_kts": 12
+    },
+    {
+      "side": "blue",
+      "class": "Type 42 DDG Batch 1",
+      "name": "HMS Glasgow",
+      "lat_deg": -52.95,
+      "lon_deg": -56.85,
+      "heading_deg": 270,
+      "speed_kts": 12
+    },
+    {
+      "side": "blue",
+      "class": "Type 42 DDG Batch 1",
+      "name": "HMS Coventry",
+      "lat_deg": -53.19,
+      "lon_deg": -56.88,
+      "heading_deg": 270,
+      "speed_kts": 12
+    },
+    {
+      "side": "blue",
+      "class": "Type 22 FF Batch 1",
+      "name": "HMS Broadsword",
+      "lat_deg": -53.05,
+      "lon_deg": -56.55,
+      "heading_deg": 270,
+      "speed_kts": 12
+    }
+  ],
+  "intel": {
+    "red": {
+      "source": "SP-2H Neptune report",
+      "interval_s": 600,
+      "error_m": 4000,
+      "firstAt_s": 300
+    }
+  },
+  "strikes": {
+    "blue": [],
+    "red": [
+      {
+        "callsign": "Super Étendard",
+        "class": "Super Etendard M",
+        "count": 2,
+        "available": 1,
+        "alt_m": 15,
+        "launchFraction": 0.65,
+        "notBefore_s": 900,
+        "from": {
+          "lat_deg": -53.2,
+          "lon_deg": -59.8
+        }
+      },
+      {
+        "callsign": "Super Étendard (second raid)",
+        "class": "Super Etendard M",
+        "count": 2,
+        "available": 1,
+        "alt_m": 15,
+        "launchFraction": 0.65,
+        "notBefore_s": 4200,
+        "from": {
+          "lat_deg": -53.0,
+          "lon_deg": -60.3
+        }
+      }
+    ]
+  },
+  "ai": {
+    "blue": {
+      "autoDefend": true,
+      "weaponsFree": false
+    },
+    "red": {
+      "autoDefend": true,
+      "weaponsFree": true
+    }
+  }
+}

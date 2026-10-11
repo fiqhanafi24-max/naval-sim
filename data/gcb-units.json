@@ -13,6 +13,9 @@
    "draft_m": 9.3,
    "rcs_dBsm": 45.333,
    "rcsModel": "ShipRCS1",
+   "irSignature_dB": 27.3,
+   "irModel": "ShipIR1",
+   "opticalCrossSection_dBsm": 27.389,
    "effectiveHeight_m": 10.0,
    "damageEffect": "Arleigh Burke DDGHM durability",
    "sensors": [
@@ -150,6 +153,9 @@
    "draft_m": 10.2,
    "rcs_dBsm": 49.518,
    "rcsModel": "ShipRCS1",
+   "irSignature_dB": 26.936,
+   "irModel": "ShipIR1",
+   "opticalCrossSection_dBsm": 27.52,
    "effectiveHeight_m": 11.5,
    "damageEffect": "Ticonderoga CG Baseline 1 durability",
    "sensors": [
@@ -305,6 +311,9 @@
    "draft_m": 6.7,
    "rcs_dBsm": 42.731,
    "rcsModel": "ShipRCS1",
+   "irSignature_dB": 23.647,
+   "irModel": "ShipIR1",
+   "opticalCrossSection_dBsm": 25.434,
    "effectiveHeight_m": 7.0,
    "damageEffect": "Oliver Hazard Perry FFGHM durability",
    "sensors": [
@@ -400,6 +409,9 @@
    "draft_m": 6.5,
    "rcs_dBsm": 46.432,
    "rcsModel": "ShipRCS1",
+   "irSignature_dB": 23.803,
+   "irModel": "ShipIR1",
+   "opticalCrossSection_dBsm": 26.496,
    "effectiveHeight_m": 10.0,
    "damageEffect": "Pr 956 Sarych durability",
    "sensors": [
@@ -557,6 +569,9 @@
    "draft_m": 5.2,
    "rcs_dBsm": 48.487,
    "rcsModel": "ShipRCS1",
+   "irSignature_dB": 26.893,
+   "irModel": "ShipIR1",
+   "opticalCrossSection_dBsm": 26.737,
    "effectiveHeight_m": 10.0,
    "damageEffect": "Pr 1155 Fregat durability",
    "sensors": [
@@ -673,6 +688,602 @@
     "100mm OF-58 FRAG": 700,
     "30mm OF-84 HE-FRAG AK-630M": 944
    }
+  },
+  "Type 42 DDG Batch 1": {
+   "name": "Type 42 DDG Batch 1",
+   "country": "UK",
+   "setup": "Type 42 B1 1982",
+   "maxSpeed_kts": 30.0,
+   "accel_ktsps": 0.198649217,
+   "turnRate_degps": 1.989196629,
+   "length_m": 119.5,
+   "beam_m": 14.3,
+   "draft_m": 5.8,
+   "rcs_dBsm": 43.737,
+   "rcsModel": "ShipRCS1",
+   "irSignature_dB": 23.688,
+   "irModel": "ShipIR1",
+   "opticalCrossSection_dBsm": 24.623,
+   "effectiveHeight_m": 7.0,
+   "damageEffect": "Type 42 DDG Batch 1 durability",
+   "sensors": [
+    {
+     "name": "Type 1022",
+     "mountAz_deg": 0.0
+    },
+    {
+     "name": "Type-909 FC",
+     "mountAz_deg": 0.0
+    },
+    {
+     "name": "Type-992 SS",
+     "mountAz_deg": 0.0
+    }
+   ],
+   "launchers": [
+    {
+     "id": 2,
+     "kind": "missile",
+     "description": "fwd Sea Dart launcher",
+     "item": "Sea Dart Mod0",
+     "count": 2,
+     "cycle_s": 1.0,
+     "capacity": 2,
+     "reload_s": 12.0,
+     "firingArc_deg": 300.0,
+     "az_deg": 0.0,
+     "el_deg": 40.0,
+     "fireControl": "Type-909 FC"
+    },
+    {
+     "id": 5,
+     "kind": "gun",
+     "description": "Fwd 114mm deck gun",
+     "item": "114mm N4A1 HE",
+     "count": 16,
+     "cycle_s": 2.0,
+     "capacity": 16,
+     "reload_s": 16.0,
+     "firingArc_deg": 330.0,
+     "az_deg": 0.0,
+     "el_deg": 0.0,
+     "fireControl": null
+    }
+   ],
+   "magazine": {
+    "114mm N4A1 HE": 800,
+    "Sea Dart Mod0": 22
+   }
+  },
+  "Type 22 FF Batch 1": {
+   "name": "Type 22 FF Batch 1",
+   "country": "UK",
+   "setup": "Type 22 B1 1982",
+   "maxSpeed_kts": 30.0,
+   "accel_ktsps": 0.224468336,
+   "turnRate_degps": 1.959344733,
+   "length_m": 131.2,
+   "beam_m": 14.8,
+   "draft_m": 6.1,
+   "rcs_dBsm": 43.577,
+   "rcsModel": "ShipRCS1",
+   "irSignature_dB": 26.688,
+   "irModel": "ShipIR1",
+   "opticalCrossSection_dBsm": 25.191,
+   "effectiveHeight_m": 7.0,
+   "damageEffect": "Type 22 FF Batch 1 durability",
+   "sensors": [
+    {
+     "name": "Type 1006",
+     "mountAz_deg": 0.0
+    },
+    {
+     "name": "Type 967/968",
+     "mountAz_deg": 0.0
+    }
+   ],
+   "launchers": [
+    {
+     "id": 0,
+     "kind": "missile",
+     "description": "fwd sea wolf launcher",
+     "item": "Sea Wolf",
+     "count": 6,
+     "cycle_s": 3.0,
+     "capacity": 6,
+     "reload_s": 540.0,
+     "firingArc_deg": 320.0,
+     "az_deg": 0.0,
+     "el_deg": 40.0,
+     "fireControl": "Type 967/968"
+    },
+    {
+     "id": 1,
+     "kind": "missile",
+     "description": "aft sea wolf launcher",
+     "item": "Sea Wolf",
+     "count": 6,
+     "cycle_s": 3.0,
+     "capacity": 6,
+     "reload_s": 540.0,
+     "firingArc_deg": 330.0,
+     "az_deg": 180.0,
+     "el_deg": 40.0,
+     "fireControl": "Type 967/968"
+    },
+    {
+     "id": 2,
+     "kind": "missile",
+     "description": "fwd exocet launcher",
+     "item": "MM-38 Exocet",
+     "count": 4,
+     "cycle_s": 2.0,
+     "capacity": 4,
+     "reload_s": 0.0,
+     "firingArc_deg": 60.0,
+     "az_deg": 0.0,
+     "el_deg": 12.0,
+     "fireControl": null
+    },
+    {
+     "id": 3,
+     "kind": "gun",
+     "description": "fwd 30mm cannon",
+     "item": "30mm/75 GCM-AO3-2 APDS",
+     "count": 83,
+     "cycle_s": 0.28,
+     "capacity": 83,
+     "reload_s": 120.0,
+     "firingArc_deg": 330.0,
+     "az_deg": 0.0,
+     "el_deg": 0.0,
+     "fireControl": null
+    },
+    {
+     "id": 4,
+     "kind": "gun",
+     "description": "aft 30mm cannon",
+     "item": "30mm/75 GCM-AO3-2 APDS",
+     "count": 83,
+     "cycle_s": 0.28,
+     "capacity": 83,
+     "reload_s": 120.0,
+     "firingArc_deg": 330.0,
+     "az_deg": 180.0,
+     "el_deg": 0.0,
+     "fireControl": null
+    },
+    {
+     "id": 5,
+     "kind": "gun",
+     "description": "stbd 20mm cannon",
+     "item": "20mm/85  GAM-B01 HE-I",
+     "count": 50,
+     "cycle_s": 0.25,
+     "capacity": 50,
+     "reload_s": 45.0,
+     "firingArc_deg": 170.0,
+     "az_deg": 90.0,
+     "el_deg": 0.0,
+     "fireControl": null
+    },
+    {
+     "id": 6,
+     "kind": "gun",
+     "description": "port 20mm cannon",
+     "item": "20mm/85  GAM-B01 HE-I",
+     "count": 50,
+     "cycle_s": 0.25,
+     "capacity": 50,
+     "reload_s": 45.0,
+     "firingArc_deg": 170.0,
+     "az_deg": 270.0,
+     "el_deg": 0.0,
+     "fireControl": null
+    }
+   ],
+   "magazine": {
+    "Sea Wolf": 40,
+    "20mm/85  GAM-B01 HE-I": 500,
+    "30mm/75 GCM-AO3-2 APDS": 1660
+   }
+  },
+  "Ticonderoga CG Baseline 1": {
+   "name": "Ticonderoga CG Baseline 1",
+   "country": "USA",
+   "setup": "Tico B1 1984",
+   "maxSpeed_kts": 32.5,
+   "accel_ktsps": 0.171944594,
+   "turnRate_degps": 1.404238906,
+   "length_m": 173.0,
+   "beam_m": 16.8,
+   "draft_m": 10.2,
+   "rcs_dBsm": 49.518,
+   "rcsModel": "ShipRCS1",
+   "irSignature_dB": 26.936,
+   "irModel": "ShipIR1",
+   "opticalCrossSection_dBsm": 27.52,
+   "effectiveHeight_m": 11.5,
+   "damageEffect": "Ticonderoga CG Baseline 1 durability",
+   "sensors": [
+    {
+     "name": "Phalanx FC",
+     "mountAz_deg": 0.0
+    },
+    {
+     "name": "SPG-62 16",
+     "mountAz_deg": 0.0
+    },
+    {
+     "name": "SPS-49(v)7",
+     "mountAz_deg": 0.0
+    },
+    {
+     "name": "SPS-55",
+     "mountAz_deg": 0.0
+    },
+    {
+     "name": "SPY-1A",
+     "mountAz_deg": 0.0
+    }
+   ],
+   "launchers": [
+    {
+     "id": 0,
+     "kind": "missile",
+     "description": "fwd Mk-26 twin rail launcher",
+     "item": "RIM-66G",
+     "count": 2,
+     "cycle_s": 1.0,
+     "capacity": 2,
+     "reload_s": 10.0,
+     "firingArc_deg": 300.0,
+     "az_deg": 0.0,
+     "el_deg": 40.0,
+     "fireControl": "SPG-62 16"
+    },
+    {
+     "id": 1,
+     "kind": "missile",
+     "description": "aft Mk-26 twin rail launcher",
+     "item": "RIM-66G",
+     "count": 2,
+     "cycle_s": 1.0,
+     "capacity": 2,
+     "reload_s": 10.0,
+     "firingArc_deg": 300.0,
+     "az_deg": 0.0,
+     "el_deg": 40.0,
+     "fireControl": "SPG-62 16"
+    },
+    {
+     "id": 2,
+     "kind": "gun",
+     "description": "stbd 20mm Phalanx CIWS",
+     "item": "20mm Mark 149-4",
+     "count": 90,
+     "cycle_s": 0.22,
+     "capacity": 90,
+     "reload_s": 1200.0,
+     "firingArc_deg": 160.0,
+     "az_deg": 95.0,
+     "el_deg": 0.0,
+     "fireControl": "Phalanx FC"
+    },
+    {
+     "id": 3,
+     "kind": "gun",
+     "description": "port 20mm Phalanx CIWS",
+     "item": "20mm Mark 149-4",
+     "count": 90,
+     "cycle_s": 0.22,
+     "capacity": 90,
+     "reload_s": 1200.0,
+     "firingArc_deg": 160.0,
+     "az_deg": 265.0,
+     "el_deg": 0.0,
+     "fireControl": "Phalanx FC"
+    },
+    {
+     "id": 4,
+     "kind": "missile",
+     "description": "stbd harpoon launcher",
+     "item": "RGM-84D Harpoon",
+     "count": 4,
+     "cycle_s": 3.0,
+     "capacity": 4,
+     "reload_s": 3600.0,
+     "firingArc_deg": 0.0,
+     "az_deg": 90.0,
+     "el_deg": 40.0,
+     "fireControl": null
+    },
+    {
+     "id": 5,
+     "kind": "missile",
+     "description": "port harpoon launcher",
+     "item": "RGM-84D Harpoon",
+     "count": 4,
+     "cycle_s": 3.0,
+     "capacity": 4,
+     "reload_s": 3600.0,
+     "firingArc_deg": 0.0,
+     "az_deg": 270.0,
+     "el_deg": 40.0,
+     "fireControl": null
+    },
+    {
+     "id": 6,
+     "kind": "gun",
+     "description": "fwd 127mm deck gun",
+     "item": "127mm mk 80 HE-PD mk 67",
+     "count": 20,
+     "cycle_s": 2.0,
+     "capacity": 20,
+     "reload_s": 20.0,
+     "firingArc_deg": 300.0,
+     "az_deg": 0.0,
+     "el_deg": 0.0,
+     "fireControl": null
+    },
+    {
+     "id": 7,
+     "kind": "gun",
+     "description": "aft 127mm deck gun",
+     "item": "127mm mk 80 HE-PD mk 67",
+     "count": 20,
+     "cycle_s": 2.0,
+     "capacity": 20,
+     "reload_s": 20.0,
+     "firingArc_deg": 270.0,
+     "az_deg": 180.0,
+     "el_deg": 0.0,
+     "fireControl": null
+    }
+   ],
+   "magazine": {
+    "RIM-66G": 64,
+    "127mm mk 80 HE-PD mk 67": 1200,
+    "20mm Mark 149-4": 970
+   }
+  },
+  "Spruance DDG": {
+   "name": "Spruance DDG",
+   "country": "USA",
+   "setup": "Spruance 1984",
+   "maxSpeed_kts": 33.0,
+   "accel_ktsps": 0.176580059,
+   "turnRate_degps": 1.547101595,
+   "length_m": 161.0,
+   "beam_m": 16.8,
+   "draft_m": 8.8,
+   "rcs_dBsm": 48.124,
+   "rcsModel": "ShipRCS1",
+   "irSignature_dB": 24.84,
+   "irModel": "ShipIR1",
+   "opticalCrossSection_dBsm": 26.973,
+   "effectiveHeight_m": 10.0,
+   "damageEffect": "Spruance DDG durability",
+   "sensors": [
+    {
+     "name": "Mk-91 FCS",
+     "mountAz_deg": 180.0
+    },
+    {
+     "name": "Phalanx FC",
+     "mountAz_deg": 0.0
+    },
+    {
+     "name": "SPS-40B",
+     "mountAz_deg": 0.0
+    },
+    {
+     "name": "SPS-55",
+     "mountAz_deg": 0.0
+    }
+   ],
+   "launchers": [
+    {
+     "id": 0,
+     "kind": "missile",
+     "description": "aft Sea Sparrow launcher",
+     "item": "RIM-7P(v1)",
+     "count": 8,
+     "cycle_s": 2.0,
+     "capacity": 8,
+     "reload_s": 600.0,
+     "firingArc_deg": 300.0,
+     "az_deg": 180.0,
+     "el_deg": 40.0,
+     "fireControl": "Mk-91 FCS"
+    },
+    {
+     "id": 1,
+     "kind": "gun",
+     "description": "fwd 127mm deck gun",
+     "item": "127mm mk 80 HE-PD mk 67",
+     "count": 20,
+     "cycle_s": 2.0,
+     "capacity": 20,
+     "reload_s": 20.0,
+     "firingArc_deg": 320.0,
+     "az_deg": 0.0,
+     "el_deg": 0.0,
+     "fireControl": "SPS-55"
+    },
+    {
+     "id": 2,
+     "kind": "gun",
+     "description": "aft 127mm deck gun",
+     "item": "127mm mk 80 HE-PD mk 67",
+     "count": 20,
+     "cycle_s": 2.0,
+     "capacity": 20,
+     "reload_s": 20.0,
+     "firingArc_deg": 290.0,
+     "az_deg": 180.0,
+     "el_deg": 0.0,
+     "fireControl": "SPS-55"
+    },
+    {
+     "id": 3,
+     "kind": "gun",
+     "description": "stbd bow 20mm Phalanx CIWS",
+     "item": "20mm mark 244-0 ELC",
+     "count": 97,
+     "cycle_s": 0.21,
+     "capacity": 97,
+     "reload_s": 300.0,
+     "firingArc_deg": 290.0,
+     "az_deg": 45.0,
+     "el_deg": 0.0,
+     "fireControl": "Phalanx FC"
+    },
+    {
+     "id": 4,
+     "kind": "gun",
+     "description": "port qtr 20mm Phalanx CIWS",
+     "item": "20mm mark 244-0 ELC",
+     "count": 97,
+     "cycle_s": 0.21,
+     "capacity": 97,
+     "reload_s": 300.0,
+     "firingArc_deg": 220.0,
+     "az_deg": 250.0,
+     "el_deg": 0.0,
+     "fireControl": "Phalanx FC"
+    },
+    {
+     "id": 5,
+     "kind": "missile",
+     "description": "stbd harpoon launcher",
+     "item": "RGM-84D Harpoon",
+     "count": 4,
+     "cycle_s": 3.0,
+     "capacity": 4,
+     "reload_s": 3600.0,
+     "firingArc_deg": 0.0,
+     "az_deg": 90.0,
+     "el_deg": 40.0,
+     "fireControl": null
+    },
+    {
+     "id": 6,
+     "kind": "missile",
+     "description": "port harpoon launcher",
+     "item": "RGM-84D Harpoon",
+     "count": 4,
+     "cycle_s": 3.0,
+     "capacity": 4,
+     "reload_s": 3600.0,
+     "firingArc_deg": 0.0,
+     "az_deg": 270.0,
+     "el_deg": 40.0,
+     "fireControl": null
+    }
+   ],
+   "magazine": {
+    "127mm mk 80 HE-PD mk 67": 1200,
+    "20mm mark 244-0 ELC": 1046
+   }
+  },
+  "Pr 1234E Ovod-E (Libya)": {
+   "name": "Pr 1234E Ovod-E (Libya)",
+   "country": "Libya",
+   "setup": "Pr 1234 Ovod-1",
+   "maxSpeed_kts": 34.0,
+   "accel_ktsps": 0.238494463,
+   "turnRate_degps": 4.873325039,
+   "length_m": 59.3,
+   "beam_m": 11.8,
+   "draft_m": 2.74,
+   "rcs_dBsm": 30.872,
+   "rcsModel": "ShipRCS1",
+   "irSignature_dB": 17.577,
+   "irModel": "ShipIR1",
+   "opticalCrossSection_dBsm": 20.186,
+   "effectiveHeight_m": 3.5,
+   "damageEffect": "Pr 1234E Ovod-E (Libya) durability",
+   "sensors": [
+    {
+     "name": "Don 2 SS",
+     "mountAz_deg": 0.0
+    },
+    {
+     "name": "MR-103 Bars",
+     "mountAz_deg": 180.0
+    },
+    {
+     "name": "MR-331 Rangout",
+     "mountAz_deg": 0.0
+    },
+    {
+     "name": "Pop Group FC",
+     "mountAz_deg": 0.0
+    }
+   ],
+   "launchers": [
+    {
+     "id": 0,
+     "kind": "missile",
+     "description": "Port P-15M Launcher",
+     "item": "P-15M Termit",
+     "count": 2,
+     "cycle_s": 0.5,
+     "capacity": 2,
+     "reload_s": 30.0,
+     "firingArc_deg": 0.0,
+     "az_deg": 0.0,
+     "el_deg": 20.0,
+     "fireControl": null
+    },
+    {
+     "id": 1,
+     "kind": "missile",
+     "description": "Stbd P-15M Launcher",
+     "item": "P-15M Termit",
+     "count": 2,
+     "cycle_s": 0.5,
+     "capacity": 2,
+     "reload_s": 30.0,
+     "firingArc_deg": 0.0,
+     "az_deg": 0.0,
+     "el_deg": 20.0,
+     "fireControl": null
+    },
+    {
+     "id": 2,
+     "kind": "missile",
+     "description": "Fwd 9M33 Osa-M launcher",
+     "item": "9M33M",
+     "count": 2,
+     "cycle_s": 1.0,
+     "capacity": 20,
+     "reload_s": 600.0,
+     "firingArc_deg": 300.0,
+     "az_deg": 0.0,
+     "el_deg": 40.0,
+     "fireControl": "Pop Group FC"
+    },
+    {
+     "id": 3,
+     "kind": "gun",
+     "description": "Aft 57mm AK-725",
+     "item": "57mm Tracer-FRAG",
+     "count": 1100,
+     "cycle_s": 0.3,
+     "capacity": 200,
+     "reload_s": 60.0,
+     "firingArc_deg": 0.0,
+     "az_deg": 0.0,
+     "el_deg": 0.0,
+     "fireControl": null
+    }
+   ],
+   "magazine": {
+    "9M33M": 20,
+    "57mm Tracer-FRAG": 1100
+   }
   }
  },
  "aircraft": {
@@ -690,6 +1301,9 @@
    "fuelRate_kgps": 1.5592,
    "rcs_dBsm": 12.14,
    "rcsModel": "AirRCS1",
+   "irSignature_dB": 30.0,
+   "irModel": "IR_FW_M_H_TP_4_M0.85",
+   "opticalCrossSection_dBsm": 14.52,
    "effectiveHeight_m": 3,
    "length_m": 20,
    "damageEffect": "P-3C III Orion durability",
@@ -715,6 +1329,9 @@
    "fuelRate_kgps": 0.19,
    "rcs_dBsm": 20.25,
    "rcsModel": "AirRCS1",
+   "irSignature_dB": 30.0,
+   "irModel": "AirIR1",
+   "opticalCrossSection_dBsm": 13.3,
    "effectiveHeight_m": 3,
    "length_m": 20,
    "damageEffect": "Il-38 durability",
@@ -740,6 +1357,9 @@
    "fuelRate_kgps": 2.8,
    "rcs_dBsm": 3.8,
    "rcsModel": "AirRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_FW_L_F_HP_2_M0.85",
+   "opticalCrossSection_dBsm": 6.26,
    "effectiveHeight_m": 3,
    "length_m": 20,
    "damageEffect": "F/A-18E durability",
@@ -794,6 +1414,9 @@
    "fuelRate_kgps": 2.0,
    "rcs_dBsm": 16.61,
    "rcsModel": "AirRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_FW_M_H_HP_2_M0.85",
+   "opticalCrossSection_dBsm": 11.73,
    "effectiveHeight_m": 3,
    "length_m": 20,
    "damageEffect": "Tu-22ME durability",
@@ -831,6 +1454,106 @@
      "az_deg": 0.0,
      "el_deg": 0.0,
      "fireControl": null
+    }
+   ]
+  },
+  "Super Etendard M": {
+   "name": "Super Etendard M",
+   "country": "France",
+   "setup": "SM1E  1979",
+   "maxSpeed_kts": 1050.0,
+   "cruiseSpeed_kts": 578,
+   "accel_ktsps": 20.0,
+   "turnRate_degps": 16.0,
+   "maxAlt_m": 13700.0,
+   "climbRate_mps": 50.0,
+   "fuel_kg": 2612.0,
+   "fuelRate_kgps": 1.8,
+   "rcs_dBsm": 6.6,
+   "rcsModel": "AirRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_FW_S_F_HP_1_M0.85",
+   "opticalCrossSection_dBsm": 5.79,
+   "effectiveHeight_m": 3,
+   "length_m": 20,
+   "damageEffect": "Super Etendard M durability",
+   "sensors": [
+    {
+     "name": "Agave",
+     "mountAz_deg": 0.0
+    }
+   ],
+   "launchers": [
+    {
+     "id": 1,
+     "kind": "missile",
+     "description": "",
+     "item": "AM-39 Exocet",
+     "count": 1,
+     "cycle_s": 600.2,
+     "capacity": 1,
+     "reload_s": 600.0,
+     "firingArc_deg": 0.0,
+     "az_deg": 0.0,
+     "el_deg": 0.0,
+     "fireControl": null
+    }
+   ]
+  },
+  "A-6E": {
+   "name": "A-6E",
+   "country": "USA",
+   "setup": "SM1   1979",
+   "maxSpeed_kts": 600.0,
+   "cruiseSpeed_kts": 330,
+   "accel_ktsps": 22.39,
+   "turnRate_degps": 14.0,
+   "maxAlt_m": 14097.0,
+   "climbRate_mps": 66.5,
+   "fuel_kg": 7266.672,
+   "fuelRate_kgps": 2.55,
+   "rcs_dBsm": 9.43,
+   "rcsModel": "AirRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_FW_M_F_HP_2_M0.85",
+   "opticalCrossSection_dBsm": 4.7,
+   "effectiveHeight_m": 3,
+   "length_m": 20,
+   "damageEffect": "A-6E durability",
+   "sensors": [
+    {
+     "name": "APQ-156",
+     "mountAz_deg": 0.0
+    }
+   ],
+   "launchers": [
+    {
+     "id": 0,
+     "kind": "missile",
+     "description": "",
+     "item": "AGM-84A Harpoon",
+     "count": 2,
+     "cycle_s": 1.0,
+     "capacity": 2,
+     "reload_s": 360.0,
+     "firingArc_deg": 0.0,
+     "az_deg": 0.0,
+     "el_deg": 0.0,
+     "fireControl": "APQ-156"
+    },
+    {
+     "id": 1,
+     "kind": "missile",
+     "description": "",
+     "item": "AGM-84A Harpoon",
+     "count": 2,
+     "cycle_s": 1.0,
+     "capacity": 2,
+     "reload_s": 360.0,
+     "firingArc_deg": 0.0,
+     "az_deg": 0.0,
+     "el_deg": 0.0,
+     "fireControl": "APQ-156"
     }
    ]
   }
@@ -1298,6 +2021,380 @@
    "detectsMissile": false,
    "detectsGround": false
   },
+  "Type 1022": {
+   "name": "Type 1022",
+   "refRange_km": 115.4,
+   "maxRange_km": 416.7,
+   "fov_deg": 360.0,
+   "minEl_deg": -35.0,
+   "maxEl_deg": 70.0,
+   "scanPeriod_s": 8.63,
+   "isSemiactive": false,
+   "isSurveillance": true,
+   "maxFireControlTracks": 0,
+   "blindSpeed_mps": 2.5,
+   "lookdownWater_dB": -3.0,
+   "lookdownLand_dB": -12.0,
+   "elBeamwidth_deg": 5.0,
+   "rangeError": 0.0,
+   "angleError_deg": 0.28,
+   "detectsSurface": false,
+   "detectsAir": true,
+   "detectsMissile": true,
+   "detectsGround": false
+  },
+  "Type-909 FC": {
+   "name": "Type-909 FC",
+   "refRange_km": 64.846,
+   "maxRange_km": 150.0,
+   "fov_deg": 360.0,
+   "minEl_deg": 0.0,
+   "maxEl_deg": 70.0,
+   "scanPeriod_s": 1.0,
+   "isSemiactive": false,
+   "isSurveillance": false,
+   "maxFireControlTracks": 2,
+   "blindSpeed_mps": 0.0,
+   "lookdownWater_dB": -30.0,
+   "lookdownLand_dB": -40.0,
+   "elBeamwidth_deg": 0.5,
+   "rangeError": 0.01,
+   "angleError_deg": 0.42,
+   "detectsSurface": false,
+   "detectsAir": true,
+   "detectsMissile": true,
+   "detectsGround": false
+  },
+  "Type-992 SS": {
+   "name": "Type-992 SS",
+   "refRange_km": 11.867,
+   "maxRange_km": 100.0,
+   "fov_deg": 360.0,
+   "minEl_deg": -35.0,
+   "maxEl_deg": 70.0,
+   "scanPeriod_s": 8.63,
+   "isSemiactive": false,
+   "isSurveillance": true,
+   "maxFireControlTracks": 0,
+   "blindSpeed_mps": 2.5,
+   "lookdownWater_dB": -3.0,
+   "lookdownLand_dB": -12.0,
+   "elBeamwidth_deg": 5.0,
+   "rangeError": 0.0,
+   "angleError_deg": 0.46,
+   "detectsSurface": true,
+   "detectsAir": false,
+   "detectsMissile": false,
+   "detectsGround": false
+  },
+  "Sea Dart Seeker": {
+   "name": "Sea Dart Seeker",
+   "refRange_km": 151.0,
+   "maxRange_km": 150.0,
+   "fov_deg": 90.0,
+   "minEl_deg": -45.0,
+   "maxEl_deg": 45.0,
+   "scanPeriod_s": 3.75,
+   "isSemiactive": true,
+   "isSurveillance": false,
+   "maxFireControlTracks": 0,
+   "blindSpeed_mps": 0.0,
+   "lookdownWater_dB": 0.0,
+   "lookdownLand_dB": 0.0,
+   "elBeamwidth_deg": 5.0,
+   "rangeError": 0.21,
+   "angleError_deg": 3.58,
+   "detectsSurface": false,
+   "detectsAir": true,
+   "detectsMissile": true,
+   "detectsGround": false
+  },
+  "Type 1006": {
+   "name": "Type 1006",
+   "refRange_km": 24.69,
+   "maxRange_km": 118.5,
+   "fov_deg": 360.0,
+   "minEl_deg": 0.0,
+   "maxEl_deg": 20.0,
+   "scanPeriod_s": 3.75,
+   "isSemiactive": false,
+   "isSurveillance": true,
+   "maxFireControlTracks": 4,
+   "blindSpeed_mps": 2.5,
+   "lookdownWater_dB": -3.0,
+   "lookdownLand_dB": -12.0,
+   "elBeamwidth_deg": 18.0,
+   "rangeError": 0.0,
+   "angleError_deg": 0.08,
+   "detectsSurface": true,
+   "detectsAir": true,
+   "detectsMissile": true,
+   "detectsGround": true
+  },
+  "Type 967/968": {
+   "name": "Type 967/968",
+   "refRange_km": 65.72,
+   "maxRange_km": 230.0,
+   "fov_deg": 360.0,
+   "minEl_deg": -35.0,
+   "maxEl_deg": 70.0,
+   "scanPeriod_s": 2.0,
+   "isSemiactive": false,
+   "isSurveillance": true,
+   "maxFireControlTracks": 2,
+   "blindSpeed_mps": 2.5,
+   "lookdownWater_dB": -3.0,
+   "lookdownLand_dB": -12.0,
+   "elBeamwidth_deg": 5.0,
+   "rangeError": 0.0,
+   "angleError_deg": 0.28,
+   "detectsSurface": true,
+   "detectsAir": true,
+   "detectsMissile": true,
+   "detectsGround": true
+  },
+  "Seawolf-SAM Seeker": {
+   "name": "Seawolf-SAM Seeker",
+   "refRange_km": 6.68,
+   "maxRange_km": 8.0,
+   "fov_deg": 90.0,
+   "minEl_deg": -45.0,
+   "maxEl_deg": 45.0,
+   "scanPeriod_s": 3.75,
+   "isSemiactive": true,
+   "isSurveillance": false,
+   "maxFireControlTracks": 0,
+   "blindSpeed_mps": 0.0,
+   "lookdownWater_dB": -3.0,
+   "lookdownLand_dB": -12.0,
+   "elBeamwidth_deg": 5.0,
+   "rangeError": 0.23,
+   "angleError_deg": 4.05,
+   "detectsSurface": false,
+   "detectsAir": true,
+   "detectsMissile": true,
+   "detectsGround": false
+  },
+  "AM-39 Seeker": {
+   "name": "AM-39 Seeker",
+   "refRange_km": 5.935,
+   "maxRange_km": 75.0,
+   "fov_deg": 60.0,
+   "minEl_deg": -45.0,
+   "maxEl_deg": 45.0,
+   "scanPeriod_s": 2.5,
+   "isSemiactive": false,
+   "isSurveillance": false,
+   "maxFireControlTracks": 0,
+   "blindSpeed_mps": 0.0,
+   "lookdownWater_dB": 0.0,
+   "lookdownLand_dB": 0.0,
+   "elBeamwidth_deg": 5.0,
+   "rangeError": 0.25,
+   "angleError_deg": 4.8,
+   "detectsSurface": true,
+   "detectsAir": false,
+   "detectsMissile": false,
+   "detectsGround": false
+  },
+  "SPY-1A": {
+   "name": "SPY-1A",
+   "refRange_km": 177.08,
+   "maxRange_km": 324.0,
+   "fov_deg": 360.0,
+   "minEl_deg": 0.0,
+   "maxEl_deg": 90.0,
+   "scanPeriod_s": 5.0,
+   "isSemiactive": false,
+   "isSurveillance": true,
+   "maxFireControlTracks": 16,
+   "blindSpeed_mps": 2.5,
+   "lookdownWater_dB": -3.0,
+   "lookdownLand_dB": -12.0,
+   "elBeamwidth_deg": 1.7,
+   "rangeError": 0.0,
+   "angleError_deg": 0.09,
+   "detectsSurface": true,
+   "detectsAir": true,
+   "detectsMissile": true,
+   "detectsGround": true
+  },
+  "Mk-91 FCS": {
+   "name": "Mk-91 FCS",
+   "refRange_km": 37.211,
+   "maxRange_km": 185.0,
+   "fov_deg": 320.0,
+   "minEl_deg": -35.0,
+   "maxEl_deg": 75.0,
+   "scanPeriod_s": 4.0,
+   "isSemiactive": false,
+   "isSurveillance": false,
+   "maxFireControlTracks": 1,
+   "blindSpeed_mps": 0.0,
+   "lookdownWater_dB": -3.0,
+   "lookdownLand_dB": -12.0,
+   "elBeamwidth_deg": 5.0,
+   "rangeError": 0.0387,
+   "angleError_deg": 1.65,
+   "detectsSurface": true,
+   "detectsAir": true,
+   "detectsMissile": true,
+   "detectsGround": false
+  },
+  "SPS-40B": {
+   "name": "SPS-40B",
+   "refRange_km": 214.053,
+   "maxRange_km": 370.0,
+   "fov_deg": 370.0,
+   "minEl_deg": 0.0,
+   "maxEl_deg": 38.0,
+   "scanPeriod_s": 8.0,
+   "isSemiactive": false,
+   "isSurveillance": true,
+   "maxFireControlTracks": 4,
+   "blindSpeed_mps": 2.5,
+   "lookdownWater_dB": -3.0,
+   "lookdownLand_dB": -12.0,
+   "elBeamwidth_deg": 19.0,
+   "rangeError": 0.0,
+   "angleError_deg": 0.5,
+   "detectsSurface": false,
+   "detectsAir": true,
+   "detectsMissile": true,
+   "detectsGround": false
+  },
+  "RIM-7P(v1) seeker": {
+   "name": "RIM-7P(v1) seeker",
+   "refRange_km": 33.5,
+   "maxRange_km": 40.0,
+   "fov_deg": 40.0,
+   "minEl_deg": -80.0,
+   "maxEl_deg": 80.0,
+   "scanPeriod_s": 1.0,
+   "isSemiactive": true,
+   "isSurveillance": false,
+   "maxFireControlTracks": 0,
+   "blindSpeed_mps": 0.0,
+   "lookdownWater_dB": 0.0,
+   "lookdownLand_dB": 0.0,
+   "elBeamwidth_deg": 5.0,
+   "rangeError": 0.3,
+   "angleError_deg": 6.19,
+   "detectsSurface": false,
+   "detectsAir": true,
+   "detectsMissile": true,
+   "detectsGround": false
+  },
+  "Don 2 SS": {
+   "name": "Don 2 SS",
+   "refRange_km": 7.714,
+   "maxRange_km": 80.0,
+   "fov_deg": 360.0,
+   "minEl_deg": -35.0,
+   "maxEl_deg": 70.0,
+   "scanPeriod_s": 8.63,
+   "isSemiactive": false,
+   "isSurveillance": true,
+   "maxFireControlTracks": 4,
+   "blindSpeed_mps": 2.5,
+   "lookdownWater_dB": -3.0,
+   "lookdownLand_dB": -12.0,
+   "elBeamwidth_deg": 5.0,
+   "rangeError": 0.0,
+   "angleError_deg": 0.57,
+   "detectsSurface": true,
+   "detectsAir": false,
+   "detectsMissile": false,
+   "detectsGround": true
+  },
+  "MR-103 Bars": {
+   "name": "MR-103 Bars",
+   "refRange_km": 0.857,
+   "maxRange_km": 40.0,
+   "fov_deg": 360.0,
+   "minEl_deg": 0.0,
+   "maxEl_deg": 87.0,
+   "scanPeriod_s": 0.5,
+   "isSemiactive": false,
+   "isSurveillance": true,
+   "maxFireControlTracks": 100,
+   "blindSpeed_mps": 2.5,
+   "lookdownWater_dB": -3.0,
+   "lookdownLand_dB": -12.0,
+   "elBeamwidth_deg": 0.5,
+   "rangeError": 0.0002,
+   "angleError_deg": 0.0004,
+   "detectsSurface": true,
+   "detectsAir": true,
+   "detectsMissile": true,
+   "detectsGround": false
+  },
+  "MR-331 Rangout": {
+   "name": "MR-331 Rangout",
+   "refRange_km": 2.59,
+   "maxRange_km": 75.0,
+   "fov_deg": 360.0,
+   "minEl_deg": -30.0,
+   "maxEl_deg": 30.0,
+   "scanPeriod_s": 4.0,
+   "isSemiactive": false,
+   "isSurveillance": true,
+   "maxFireControlTracks": 0,
+   "blindSpeed_mps": 0.0,
+   "lookdownWater_dB": 0.0,
+   "lookdownLand_dB": 0.0,
+   "elBeamwidth_deg": 5.0,
+   "rangeError": 0.34,
+   "angleError_deg": 7.59,
+   "detectsSurface": true,
+   "detectsAir": true,
+   "detectsMissile": true,
+   "detectsGround": false
+  },
+  "Pop Group FC": {
+   "name": "Pop Group FC",
+   "refRange_km": 21.0,
+   "maxRange_km": 75.0,
+   "fov_deg": 360.0,
+   "minEl_deg": -10.0,
+   "maxEl_deg": 60.0,
+   "scanPeriod_s": 3.0,
+   "isSemiactive": false,
+   "isSurveillance": false,
+   "maxFireControlTracks": 4,
+   "blindSpeed_mps": 2.5,
+   "lookdownWater_dB": -20.0,
+   "lookdownLand_dB": -25.0,
+   "elBeamwidth_deg": 5.0,
+   "rangeError": 0.0,
+   "angleError_deg": 0.4,
+   "detectsSurface": true,
+   "detectsAir": true,
+   "detectsMissile": true,
+   "detectsGround": true
+  },
+  "9M33 SARH Seeker": {
+   "name": "9M33 SARH Seeker",
+   "refRange_km": 20.0,
+   "maxRange_km": 25.0,
+   "fov_deg": 90.0,
+   "minEl_deg": -45.0,
+   "maxEl_deg": 45.0,
+   "scanPeriod_s": 2.0,
+   "isSemiactive": true,
+   "isSurveillance": false,
+   "maxFireControlTracks": 0,
+   "blindSpeed_mps": 0.0,
+   "lookdownWater_dB": 0.0,
+   "lookdownLand_dB": 0.0,
+   "elBeamwidth_deg": 5.0,
+   "rangeError": 0.32,
+   "angleError_deg": 6.79,
+   "detectsSurface": false,
+   "detectsAir": true,
+   "detectsMissile": true,
+   "detectsGround": false
+  },
   "APS-116": {
    "name": "APS-116",
    "refRange_km": 37.04,
@@ -1429,6 +2526,91 @@
    "detectsAir": false,
    "detectsMissile": false,
    "detectsGround": false
+  },
+  "Agave": {
+   "name": "Agave",
+   "refRange_km": 45.651,
+   "maxRange_km": 250.0,
+   "fov_deg": 100.0,
+   "minEl_deg": -60.0,
+   "maxEl_deg": 20.0,
+   "scanPeriod_s": 12.0,
+   "isSemiactive": false,
+   "isSurveillance": true,
+   "maxFireControlTracks": 2,
+   "blindSpeed_mps": 2.5,
+   "lookdownWater_dB": 0.0,
+   "lookdownLand_dB": -12.0,
+   "elBeamwidth_deg": 3.3,
+   "rangeError": 0.01,
+   "angleError_deg": 0.17,
+   "detectsSurface": true,
+   "detectsAir": true,
+   "detectsMissile": true,
+   "detectsGround": true
+  },
+  "APQ-156": {
+   "name": "APQ-156",
+   "refRange_km": 12.475,
+   "maxRange_km": 277.8,
+   "fov_deg": 153.5,
+   "minEl_deg": -56.17,
+   "maxEl_deg": 36.83,
+   "scanPeriod_s": 7.76,
+   "isSemiactive": false,
+   "isSurveillance": true,
+   "maxFireControlTracks": 4,
+   "blindSpeed_mps": 2.5,
+   "lookdownWater_dB": -3.0,
+   "lookdownLand_dB": -12.0,
+   "elBeamwidth_deg": 35.0,
+   "rangeError": 0.03,
+   "angleError_deg": 0.07,
+   "detectsSurface": true,
+   "detectsAir": false,
+   "detectsMissile": false,
+   "detectsGround": true
+  }
+ },
+ "opticals": {
+  "Snegir IR Seeker": {
+   "name": "Snegir IR Seeker",
+   "refRange_km": 6.0,
+   "maxRange_km": 20.0,
+   "fov_deg": 15.0,
+   "scanPeriod_s": 2.0,
+   "isIR": true,
+   "isSurveillance": false,
+   "detectsSurface": true,
+   "detectsAir": false,
+   "detectsMissile": false,
+   "nightFactor": 0.75
+  },
+  "AIM-9X Seeker": {
+   "name": "AIM-9X Seeker",
+   "refRange_km": 24.72,
+   "maxRange_km": 30.0,
+   "fov_deg": 60.0,
+   "scanPeriod_s": 2.0,
+   "isIR": true,
+   "isSurveillance": false,
+   "detectsSurface": false,
+   "detectsAir": true,
+   "detectsMissile": false,
+   "nightFactor": 1.0
+  },
+  "R.550 Magic IR Seeker": {
+   "name": "R.550 Magic IR Seeker",
+   "refRange_km": 3.38,
+   "maxRange_km": 14.0,
+   "fov_deg": 30.0,
+   "scanPeriod_s": 2.0,
+   "isIR": true,
+   "isSurveillance": false,
+   "detectsSurface": false,
+   "detectsAir": true,
+   "detectsMissile": false,
+   "nightFactor": 1.0
   }
  },
  "missiles": {
@@ -1443,6 +2625,9 @@
    "detonationRange_m": 7.95323127,
    "rcs_dBsm": -8.3,
    "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_M_R_M0.85",
+   "opticalCrossSection_dBsm": 1.12,
    "effectiveHeight_m": 0.0,
    "gMax": 30.0,
    "maxTurnRate_degps": 81.9,
@@ -1457,6 +2642,7 @@
    "sustTime_s": 7.0,
    "shutdownSpeed_mps": 400.0,
    "seeker": "RIM-66C+ Seeker",
+   "seekerType": "radar",
    "needsFireControl": true,
    "damageModel": "BlastFragMis62.5kg",
    "damageEffect": "TestMissileDmg",
@@ -1486,6 +2672,9 @@
    "detonationRange_m": 6.672742317,
    "rcs_dBsm": -10.9,
    "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_S_R_M0.85",
+   "opticalCrossSection_dBsm": -2.0,
    "effectiveHeight_m": 0.0,
    "gMax": 50.0,
    "maxTurnRate_degps": 136.6,
@@ -1500,6 +2689,7 @@
    "sustTime_s": 0.0,
    "shutdownSpeed_mps": 400.0,
    "seeker": "ESSM seeker",
+   "seekerType": "radar",
    "needsFireControl": true,
    "damageModel": "BlastFragMis40kg",
    "damageEffect": "TestMissileDmg",
@@ -1529,6 +2719,9 @@
    "detonationRange_m": 0.0,
    "rcs_dBsm": -19.6,
    "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_M_LP_M0.85",
+   "opticalCrossSection_dBsm": 1.53,
    "effectiveHeight_m": 0.0,
    "gMax": 5.0,
    "maxTurnRate_degps": 36.42,
@@ -1543,6 +2736,7 @@
    "sustTime_s": 835.0,
    "shutdownSpeed_mps": 250.0,
    "seeker": "Harpoon Seeker",
+   "seekerType": "radar",
    "needsFireControl": false,
    "damageModel": "Pen220kg",
    "damageEffect": "TestMissileDmg",
@@ -1584,6 +2778,9 @@
    "detonationRange_m": 7.95323127,
    "rcs_dBsm": -8.3,
    "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_M_R_M0.85",
+   "opticalCrossSection_dBsm": 1.12,
    "effectiveHeight_m": 0.0,
    "gMax": 30.0,
    "maxTurnRate_degps": 81.9,
@@ -1598,6 +2795,7 @@
    "sustTime_s": 7.0,
    "shutdownSpeed_mps": 400.0,
    "seeker": "RIM-66C+ Seeker",
+   "seekerType": "radar",
    "needsFireControl": true,
    "damageModel": "BlastFragMis62.5kg",
    "damageEffect": "TestMissileDmg",
@@ -1627,6 +2825,9 @@
    "detonationRange_m": 11.62229138,
    "rcs_dBsm": -6.9,
    "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_M_R_M0.85",
+   "opticalCrossSection_dBsm": -2.19,
    "effectiveHeight_m": 0.0,
    "gMax": 25.0,
    "maxTurnRate_degps": 54.6,
@@ -1641,6 +2842,7 @@
    "sustTime_s": 0.0,
    "shutdownSpeed_mps": 500.0,
    "seeker": "9M8M SARH Seeker",
+   "seekerType": "radar",
    "needsFireControl": true,
    "damageModel": "BlastFragAir70kg",
    "damageEffect": "TestMissileDmg",
@@ -1664,6 +2866,9 @@
    "detonationRange_m": 0.0,
    "rcs_dBsm": -1.9,
    "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_VL_LP_M0.85",
+   "opticalCrossSection_dBsm": 6.77,
    "effectiveHeight_m": 0.0,
    "gMax": 15.0,
    "maxTurnRate_degps": 65.6,
@@ -1678,6 +2883,7 @@
    "sustTime_s": 241.0,
    "shutdownSpeed_mps": 300.0,
    "seeker": "SS-N-22 seeker",
+   "seekerType": "radar",
    "needsFireControl": false,
    "damageModel": "Pen300kg",
    "damageEffect": "TestMissileDmg2",
@@ -1743,6 +2949,9 @@
    "detonationRange_m": 6.79751968,
    "rcs_dBsm": -11.4,
    "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_S_R_M0.85",
+   "opticalCrossSection_dBsm": 0.21,
    "effectiveHeight_m": 0.0,
    "gMax": 30.0,
    "maxTurnRate_degps": 141.588,
@@ -1757,6 +2966,7 @@
    "sustTime_s": 0.0,
    "shutdownSpeed_mps": 450.0,
    "seeker": "Command Guidance 9M330 Seeker",
+   "seekerType": "radar",
    "needsFireControl": true,
    "damageModel": "BlastFragAir15kg",
    "damageEffect": "TestMissileDmg",
@@ -1780,6 +2990,9 @@
    "detonationRange_m": 0.0,
    "rcs_dBsm": -0.2,
    "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_VL_R_M0.85",
+   "opticalCrossSection_dBsm": 4.73,
    "effectiveHeight_m": 0.0,
    "gMax": 5.0,
    "maxTurnRate_degps": 36.4,
@@ -1794,6 +3007,7 @@
    "sustTime_s": 0.0,
    "shutdownSpeed_mps": 150.0,
    "seeker": "SS-N-14 seeker",
+   "seekerType": "radar",
    "needsFireControl": false,
    "damageModel": "Harmless",
    "damageEffect": "TestMissileDmg",
@@ -1812,6 +3026,429 @@
     }
    ]
   },
+  "Sea Dart Mod0": {
+   "name": "Sea Dart Mod0",
+   "weight_kg": 544.0,
+   "launchSpeed_mps": 0.0,
+   "minRange_km": 2.0,
+   "maxRange_km": 59.1,
+   "targetFlags": 10,
+   "probNoFaults": 0.85,
+   "detonationRange_m": 7.909763393,
+   "rcs_dBsm": -4.7,
+   "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_S_R_M0.85",
+   "opticalCrossSection_dBsm": 2.0,
+   "effectiveHeight_m": 0.0,
+   "gMax": 15.0,
+   "maxTurnRate_degps": 54.6,
+   "cdpsub": 0.02,
+   "cdptran": 0.09,
+   "cdpsup": 0.06,
+   "mcm": 0.8,
+   "msupm": 1.2,
+   "boostThrust_N": 122000.0,
+   "boostTime_s": 3.5,
+   "sustThrust_N": 32000.0,
+   "sustTime_s": 58.0,
+   "shutdownSpeed_mps": 400.0,
+   "seeker": "Sea Dart Seeker",
+   "seekerType": "radar",
+   "needsFireControl": true,
+   "damageModel": "BlastFragAir24kg",
+   "damageEffect": "TestMissileDmg",
+   "profile": [
+    {
+     "range_km": 0.0,
+     "alt_m": 10000.0,
+     "altMode": 2,
+     "guidMode": 2
+    }
+   ]
+  },
+  "Sea Wolf": {
+   "name": "Sea Wolf",
+   "weight_kg": 82.0,
+   "launchSpeed_mps": 0.0,
+   "minRange_km": 2.0,
+   "maxRange_km": 3.0,
+   "targetFlags": 10,
+   "probNoFaults": 0.85,
+   "detonationRange_m": 4.734828351,
+   "rcs_dBsm": -9.4,
+   "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_VS_R_M0.85",
+   "opticalCrossSection_dBsm": 1.21,
+   "effectiveHeight_m": 0.0,
+   "gMax": 25.0,
+   "maxTurnRate_degps": 54.6,
+   "cdpsub": 0.0084,
+   "cdptran": 0.0105,
+   "cdpsup": 0.007,
+   "mcm": 0.8,
+   "msupm": 1.2,
+   "boostThrust_N": 32000.0,
+   "boostTime_s": 2.0,
+   "sustThrust_N": 0.0,
+   "sustTime_s": 0.0,
+   "shutdownSpeed_mps": 500.0,
+   "seeker": "Seawolf-SAM Seeker",
+   "seekerType": "radar",
+   "needsFireControl": true,
+   "damageModel": "BlastFragMis14kg",
+   "damageEffect": "TestMissileDmg",
+   "profile": [
+    {
+     "range_km": 0.0,
+     "alt_m": 3000.0,
+     "altMode": 2,
+     "guidMode": 2
+    }
+   ]
+  },
+  "MM-38 Exocet": {
+   "name": "MM-38 Exocet",
+   "weight_kg": 750.0,
+   "launchSpeed_mps": 0.0,
+   "minRange_km": 4.0,
+   "maxRange_km": 42.0,
+   "targetFlags": 1,
+   "probNoFaults": 0.85,
+   "detonationRange_m": 0.0,
+   "rcs_dBsm": -8.1,
+   "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_M_R_M0.85",
+   "opticalCrossSection_dBsm": 1.37,
+   "effectiveHeight_m": 0.0,
+   "gMax": 15.0,
+   "maxTurnRate_degps": 127.43,
+   "cdpsub": 0.055,
+   "cdptran": 0.0625,
+   "cdpsup": 0.05,
+   "mcm": 0.8,
+   "msupm": 1.2,
+   "boostThrust_N": 86000.0,
+   "boostTime_s": 2.0,
+   "sustThrust_N": 7740.0,
+   "sustTime_s": 128.0,
+   "shutdownSpeed_mps": 250.0,
+   "seeker": "AM-39 Seeker",
+   "seekerType": "radar",
+   "needsFireControl": false,
+   "damageModel": "Pen165kg",
+   "damageEffect": "TestMissileDmg",
+   "profile": [
+    {
+     "range_km": 12.5,
+     "alt_m": 12.0,
+     "altMode": 0,
+     "guidMode": 1
+    },
+    {
+     "range_km": 5.0,
+     "alt_m": 5.0,
+     "altMode": 0,
+     "guidMode": 1
+    },
+    {
+     "range_km": 0.01,
+     "alt_m": 0.0,
+     "altMode": 2,
+     "guidMode": 2
+    }
+   ]
+  },
+  "RIM-66G": {
+   "name": "RIM-66G",
+   "weight_kg": 709.0,
+   "launchSpeed_mps": 0.0,
+   "minRange_km": 2.0,
+   "maxRange_km": 100.0,
+   "targetFlags": 10,
+   "probNoFaults": 0.85,
+   "detonationRange_m": 7.95323127,
+   "rcs_dBsm": -8.3,
+   "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_M_R_M0.85",
+   "opticalCrossSection_dBsm": 1.12,
+   "effectiveHeight_m": 0.0,
+   "gMax": 30.0,
+   "maxTurnRate_degps": 81.9,
+   "cdpsub": 0.024,
+   "cdptran": 0.03,
+   "cdpsup": 0.02,
+   "mcm": 0.8,
+   "msupm": 1.2,
+   "boostThrust_N": 120000.0,
+   "boostTime_s": 5.0,
+   "sustThrust_N": 50000.0,
+   "sustTime_s": 7.0,
+   "shutdownSpeed_mps": 400.0,
+   "seeker": "RIM-66C+ Seeker",
+   "seekerType": "radar",
+   "needsFireControl": true,
+   "damageModel": "BlastFragMis62.5kg",
+   "damageEffect": "TestMissileDmg",
+   "profile": [
+    {
+     "range_km": 33.0,
+     "alt_m": 11250.0,
+     "altMode": 0,
+     "guidMode": 0
+    },
+    {
+     "range_km": 0.1,
+     "alt_m": 7500.0,
+     "altMode": 2,
+     "guidMode": 2
+    }
+   ]
+  },
+  "RGM-84D Harpoon": {
+   "name": "RGM-84D Harpoon",
+   "weight_kg": 689.0,
+   "launchSpeed_mps": 0.0,
+   "minRange_km": 2.0,
+   "maxRange_km": 125.0,
+   "targetFlags": 1,
+   "probNoFaults": 0.85,
+   "detonationRange_m": 0.0,
+   "rcs_dBsm": -13.6,
+   "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_M_LP_M0.85",
+   "opticalCrossSection_dBsm": 1.53,
+   "effectiveHeight_m": 0.0,
+   "gMax": 5.0,
+   "maxTurnRate_degps": 36.42,
+   "cdpsub": 0.021,
+   "cdptran": 0.02625,
+   "cdpsup": 0.0175,
+   "mcm": 0.8,
+   "msupm": 1.2,
+   "boostThrust_N": 29400.0,
+   "boostTime_s": 5.4,
+   "sustThrust_N": 2940.0,
+   "sustTime_s": 403.0,
+   "shutdownSpeed_mps": 250.0,
+   "seeker": "Harpoon Seeker",
+   "seekerType": "radar",
+   "needsFireControl": false,
+   "damageModel": "Pen220kg",
+   "damageEffect": "TestMissileDmg",
+   "profile": [
+    {
+     "range_km": 20.0,
+     "alt_m": 80.0,
+     "altMode": 0,
+     "guidMode": 1
+    },
+    {
+     "range_km": 3.5,
+     "alt_m": 40.0,
+     "altMode": 0,
+     "guidMode": 2
+    },
+    {
+     "range_km": 2.0,
+     "alt_m": 800.0,
+     "altMode": 0,
+     "guidMode": 2
+    },
+    {
+     "range_km": 0.01,
+     "alt_m": 0.0,
+     "altMode": 2,
+     "guidMode": 2
+    }
+   ]
+  },
+  "RIM-7P(v1)": {
+   "name": "RIM-7P(v1)",
+   "weight_kg": 225.0,
+   "launchSpeed_mps": 0.0,
+   "minRange_km": 0.5,
+   "maxRange_km": 28.6,
+   "targetFlags": 10,
+   "probNoFaults": 0.85,
+   "detonationRange_m": 6.382482795,
+   "rcs_dBsm": -12.8,
+   "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_S_R_M0.85",
+   "opticalCrossSection_dBsm": -2.0,
+   "effectiveHeight_m": 0.0,
+   "gMax": 20.0,
+   "maxTurnRate_degps": 54.6,
+   "cdpsub": 0.024,
+   "cdptran": 0.03,
+   "cdpsup": 0.02,
+   "mcm": 0.8,
+   "msupm": 1.2,
+   "boostThrust_N": 70000.0,
+   "boostTime_s": 3.0,
+   "sustThrust_N": 17000.0,
+   "sustTime_s": 16.0,
+   "shutdownSpeed_mps": 400.0,
+   "seeker": "RIM-7P(v1) seeker",
+   "seekerType": "radar",
+   "needsFireControl": true,
+   "damageModel": "BlastFragMis35kg",
+   "damageEffect": "TestMissileDmg",
+   "profile": [
+    {
+     "range_km": 0.1,
+     "alt_m": 8000.0,
+     "altMode": 2,
+     "guidMode": 2
+    }
+   ]
+  },
+  "RUM-139 Mod4 ASROC": {
+   "name": "RUM-139 Mod4 ASROC",
+   "weight_kg": 487.0,
+   "launchSpeed_mps": 0.0,
+   "minRange_km": 1.0,
+   "maxRange_km": 15.0,
+   "targetFlags": 17,
+   "probNoFaults": 0.85,
+   "detonationRange_m": 0.0,
+   "rcs_dBsm": -7.9,
+   "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_S_R_M0.85",
+   "opticalCrossSection_dBsm": 1.0,
+   "effectiveHeight_m": 0.0,
+   "gMax": 5.0,
+   "maxTurnRate_degps": 30.3,
+   "cdpsub": 0.012,
+   "cdptran": 0.015,
+   "cdpsup": 0.01,
+   "mcm": 0.8,
+   "msupm": 1.2,
+   "boostThrust_N": 22000.0,
+   "boostTime_s": 6.55,
+   "sustThrust_N": 0.0,
+   "sustTime_s": 0.0,
+   "shutdownSpeed_mps": 180.0,
+   "seeker": null,
+   "seekerType": null,
+   "needsFireControl": false,
+   "damageModel": "Harmless",
+   "damageEffect": "TestMissileDmg",
+   "profile": [
+    {
+     "range_km": 1.0,
+     "alt_m": 300.0,
+     "altMode": 0,
+     "guidMode": 1
+    },
+    {
+     "range_km": 0.75,
+     "alt_m": 50.0,
+     "altMode": 0,
+     "guidMode": 3
+    }
+   ]
+  },
+  "P-15M Termit": {
+   "name": "P-15M Termit",
+   "weight_kg": 2300.0,
+   "launchSpeed_mps": 0.0,
+   "minRange_km": 2.0,
+   "maxRange_km": 100.0,
+   "targetFlags": 1,
+   "probNoFaults": 0.85,
+   "detonationRange_m": 1.0,
+   "rcs_dBsm": 1.7,
+   "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_L_R_M0.85",
+   "opticalCrossSection_dBsm": 5.7,
+   "effectiveHeight_m": 0.0,
+   "gMax": 5.0,
+   "maxTurnRate_degps": 21.85,
+   "cdpsub": 0.3,
+   "cdptran": 0.375,
+   "cdpsup": 0.25,
+   "mcm": 0.8,
+   "msupm": 1.2,
+   "boostThrust_N": 40300.0,
+   "boostTime_s": 260.0,
+   "sustThrust_N": 0.0,
+   "sustTime_s": 0.0,
+   "shutdownSpeed_mps": 250.0,
+   "seeker": "Snegir IR Seeker",
+   "seekerType": "optical",
+   "needsFireControl": false,
+   "damageModel": "Blast450kg",
+   "damageEffect": "TestMissileDmg2",
+   "profile": [
+    {
+     "range_km": 11.0,
+     "alt_m": 25.0,
+     "altMode": 0,
+     "guidMode": 1
+    },
+    {
+     "range_km": 0.01,
+     "alt_m": 0.0,
+     "altMode": 2,
+     "guidMode": 2
+    }
+   ]
+  },
+  "9M33M": {
+   "name": "9M33M",
+   "weight_kg": 126.0,
+   "launchSpeed_mps": 0.0,
+   "minRange_km": 1.5,
+   "maxRange_km": 7.8,
+   "targetFlags": 10,
+   "probNoFaults": 0.85,
+   "detonationRange_m": 10.41446813,
+   "rcs_dBsm": -12.5,
+   "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_S_R_M0.85",
+   "opticalCrossSection_dBsm": -2.19,
+   "effectiveHeight_m": 0.0,
+   "gMax": 25.0,
+   "maxTurnRate_degps": 68.3,
+   "cdpsub": 0.012,
+   "cdptran": 0.015,
+   "cdpsup": 0.01,
+   "mcm": 0.8,
+   "msupm": 1.2,
+   "boostThrust_N": 60000.0,
+   "boostTime_s": 2.0,
+   "sustThrust_N": 0.0,
+   "sustTime_s": 0.0,
+   "shutdownSpeed_mps": 400.0,
+   "seeker": "9M33 SARH Seeker",
+   "seekerType": "radar",
+   "needsFireControl": true,
+   "damageModel": "BlastFragAir50kg",
+   "damageEffect": "TestMissileDmg",
+   "profile": [
+    {
+     "range_km": 3.0,
+     "alt_m": 200.0,
+     "altMode": 2,
+     "guidMode": 0
+    },
+    {
+     "range_km": 0.1,
+     "alt_m": 100.0,
+     "altMode": 2,
+     "guidMode": 0
+    }
+   ]
+  },
   "AIM-120D": {
    "name": "AIM-120D",
    "weight_kg": 150.0,
@@ -1823,6 +3460,9 @@
    "detonationRange_m": 7.592723962,
    "rcs_dBsm": -14.0,
    "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_S_R_M0.85",
+   "opticalCrossSection_dBsm": -2.19,
    "effectiveHeight_m": 0.0,
    "gMax": 35.0,
    "maxTurnRate_degps": 106.191,
@@ -1837,6 +3477,7 @@
    "sustTime_s": 25.0,
    "shutdownSpeed_mps": 500.0,
    "seeker": "AIM-120D Seeker",
+   "seekerType": "radar",
    "needsFireControl": true,
    "damageModel": "BlastFragAir22kg",
    "damageEffect": "TestMissileDmg",
@@ -1866,6 +3507,9 @@
    "detonationRange_m": 0.0,
    "rcs_dBsm": -19.5,
    "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_M_LP_M0.85",
+   "opticalCrossSection_dBsm": 1.53,
    "effectiveHeight_m": 0.0,
    "gMax": 5.0,
    "maxTurnRate_degps": 36.42,
@@ -1880,6 +3524,7 @@
    "sustTime_s": 0.0,
    "shutdownSpeed_mps": 250.0,
    "seeker": "Harpoon Seeker",
+   "seekerType": "radar",
    "needsFireControl": false,
    "damageModel": "Pen220kg",
    "damageEffect": "TestMissileDmg",
@@ -1921,6 +3566,9 @@
    "detonationRange_m": 6.228484356,
    "rcs_dBsm": -16.9,
    "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_VS_R_M0.85",
+   "opticalCrossSection_dBsm": -4.2,
    "effectiveHeight_m": 0.0,
    "gMax": 50.0,
    "maxTurnRate_degps": 235.98,
@@ -1934,7 +3582,8 @@
    "sustThrust_N": 0.0,
    "sustTime_s": 0.0,
    "shutdownSpeed_mps": 450.0,
-   "seeker": null,
+   "seeker": "AIM-9X Seeker",
+   "seekerType": "optical",
    "needsFireControl": false,
    "damageModel": "BlastFragAir10.5kg",
    "damageEffect": "TestMissileDmg",
@@ -1958,6 +3607,9 @@
    "detonationRange_m": 1.0,
    "rcs_dBsm": 6.2,
    "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_VL_R_M0.85",
+   "opticalCrossSection_dBsm": 8.33,
    "effectiveHeight_m": 0.0,
    "gMax": 15.0,
    "maxTurnRate_degps": 49.7,
@@ -1972,6 +3624,7 @@
    "sustTime_s": 420.0,
    "shutdownSpeed_mps": 300.0,
    "seeker": "Kh-22 Seeker",
+   "seekerType": "radar",
    "needsFireControl": false,
    "damageModel": "Blast1000kg",
    "damageEffect": "TestMissileDmg2",
@@ -1985,6 +3638,159 @@
     {
      "range_km": 0.1,
      "alt_m": 5000.0,
+     "altMode": 2,
+     "guidMode": 2
+    }
+   ]
+  },
+  "R.550 Magic": {
+   "name": "R.550 Magic",
+   "weight_kg": 89.0,
+   "launchSpeed_mps": 0.0,
+   "minRange_km": 0.3,
+   "maxRange_km": 7.0,
+   "targetFlags": 2,
+   "probNoFaults": 0.85,
+   "detonationRange_m": 6.540916362,
+   "rcs_dBsm": -15.0,
+   "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_VS_R_M0.85",
+   "opticalCrossSection_dBsm": -4.2,
+   "effectiveHeight_m": 0.0,
+   "gMax": 25.0,
+   "maxTurnRate_degps": 118.0,
+   "cdpsub": 0.0168,
+   "cdptran": 0.024,
+   "cdpsup": 0.014,
+   "mcm": 0.8,
+   "msupm": 1.2,
+   "boostThrust_N": 20000.0,
+   "boostTime_s": 1.9,
+   "sustThrust_N": 0.0,
+   "sustTime_s": 0.0,
+   "shutdownSpeed_mps": 450.0,
+   "seeker": "R.550 Magic IR Seeker",
+   "seekerType": "optical",
+   "needsFireControl": false,
+   "damageModel": "BlastFragAir12.5kg",
+   "damageEffect": "TestMissileDmg",
+   "profile": [
+    {
+     "range_km": 0.01,
+     "alt_m": 12000.0,
+     "altMode": 2,
+     "guidMode": 2
+    }
+   ]
+  },
+  "AM-39 Exocet": {
+   "name": "AM-39 Exocet",
+   "weight_kg": 655.0,
+   "launchSpeed_mps": 0.0,
+   "minRange_km": 2.0,
+   "maxRange_km": 70.0,
+   "targetFlags": 1,
+   "probNoFaults": 0.85,
+   "detonationRange_m": 0.0,
+   "rcs_dBsm": -8.1,
+   "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_M_R_M0.85",
+   "opticalCrossSection_dBsm": 1.37,
+   "effectiveHeight_m": 0.0,
+   "gMax": 15.0,
+   "maxTurnRate_degps": 65.6,
+   "cdpsub": 0.06,
+   "cdptran": 0.075,
+   "cdpsup": 0.05,
+   "mcm": 0.8,
+   "msupm": 1.2,
+   "boostThrust_N": 9200.0,
+   "boostTime_s": 204.0,
+   "sustThrust_N": 0.0,
+   "sustTime_s": 0.0,
+   "shutdownSpeed_mps": 250.0,
+   "seeker": "AM-39 Seeker",
+   "seekerType": "radar",
+   "needsFireControl": false,
+   "damageModel": "Pen165kg",
+   "damageEffect": "TestMissileDmg",
+   "profile": [
+    {
+     "range_km": 20.0,
+     "alt_m": 3.0,
+     "altMode": 0,
+     "guidMode": 1
+    },
+    {
+     "range_km": 10.0,
+     "alt_m": 3.0,
+     "altMode": 0,
+     "guidMode": 1
+    },
+    {
+     "range_km": 0.01,
+     "alt_m": 0.01,
+     "altMode": 2,
+     "guidMode": 2
+    }
+   ]
+  },
+  "AGM-84A Harpoon": {
+   "name": "AGM-84A Harpoon",
+   "weight_kg": 555.0,
+   "launchSpeed_mps": 0.0,
+   "minRange_km": 2.0,
+   "maxRange_km": 93.0,
+   "targetFlags": 1,
+   "probNoFaults": 0.85,
+   "detonationRange_m": 0.0,
+   "rcs_dBsm": -6.5,
+   "rcsModel": "MissileRCS1",
+   "irSignature_dB": 0.0,
+   "irModel": "IR_M_S_LP_M0.85",
+   "opticalCrossSection_dBsm": 1.53,
+   "effectiveHeight_m": 0.0,
+   "gMax": 5.0,
+   "maxTurnRate_degps": 36.42,
+   "cdpsub": 0.021,
+   "cdptran": 0.02625,
+   "cdpsup": 0.0175,
+   "mcm": 0.8,
+   "msupm": 1.2,
+   "boostThrust_N": 2940.0,
+   "boostTime_s": 297.0,
+   "sustThrust_N": 0.0,
+   "sustTime_s": 0.0,
+   "shutdownSpeed_mps": 250.0,
+   "seeker": "Harpoon Seeker",
+   "seekerType": "radar",
+   "needsFireControl": false,
+   "damageModel": "Pen220kg",
+   "damageEffect": "TestMissileDmg",
+   "profile": [
+    {
+     "range_km": 20.0,
+     "alt_m": 80.0,
+     "altMode": 0,
+     "guidMode": 1
+    },
+    {
+     "range_km": 3.5,
+     "alt_m": 40.0,
+     "altMode": 0,
+     "guidMode": 2
+    },
+    {
+     "range_km": 2.0,
+     "alt_m": 800.0,
+     "altMode": 0,
+     "guidMode": 2
+    },
+    {
+     "range_km": 0.01,
+     "alt_m": 0.0,
      "altMode": 2,
      "guidMode": 2
     }
@@ -2097,6 +3903,81 @@
    "damageModel": "SolidProjectile",
    "damageEffect": "ToughWeapon"
   },
+  "114mm N4A1 HE": {
+   "name": "114mm N4A1 HE",
+   "type": "gun",
+   "weight_kg": 20.0,
+   "launchSpeed_mps": 869.0,
+   "minRange_km": 0.2,
+   "maxRange_km": 22.0,
+   "angleError_rad": 0.0032,
+   "burstCount": 0,
+   "targetFlags": 7,
+   "detonationRange_m": 0.0,
+   "probNoFaults": 1.0,
+   "damageModel": "Pen3kg",
+   "damageEffect": "ToughWeapon"
+  },
+  "30mm/75 GCM-AO3-2 APDS": {
+   "name": "30mm/75 GCM-AO3-2 APDS",
+   "type": "autocannon",
+   "weight_kg": 0.3,
+   "launchSpeed_mps": 1175.0,
+   "minRange_km": 0.2,
+   "maxRange_km": 10.0,
+   "angleError_rad": 0.0026,
+   "burstCount": 3,
+   "targetFlags": 15,
+   "detonationRange_m": 0.0,
+   "probNoFaults": 1.0,
+   "damageModel": "SolidProjectile",
+   "damageEffect": "ToughWeapon"
+  },
+  "20mm/85  GAM-B01 HE-I": {
+   "name": "20mm/85  GAM-B01 HE-I",
+   "type": "autocannon",
+   "weight_kg": 0.12,
+   "launchSpeed_mps": 1050.0,
+   "minRange_km": 0.2,
+   "maxRange_km": 2.2,
+   "angleError_rad": 0.00202,
+   "burstCount": 4,
+   "targetFlags": 7,
+   "detonationRange_m": 0.0,
+   "probNoFaults": 1.0,
+   "damageModel": "SolidPen0.05kg",
+   "damageEffect": "ToughWeapon"
+  },
+  "20mm Mark 149-4": {
+   "name": "20mm Mark 149-4",
+   "type": "autocannon",
+   "weight_kg": 0.1,
+   "launchSpeed_mps": 1113.0,
+   "minRange_km": 0.2,
+   "maxRange_km": 3.6,
+   "angleError_rad": 0.0002,
+   "burstCount": 11,
+   "targetFlags": 11,
+   "detonationRange_m": 0.0,
+   "probNoFaults": 1.0,
+   "damageModel": "CIWSSolidProjectile",
+   "damageEffect": "ToughWeapon"
+  },
+  "57mm Tracer-FRAG": {
+   "name": "57mm Tracer-FRAG",
+   "type": "gun",
+   "weight_kg": 2.4,
+   "launchSpeed_mps": 1020.0,
+   "minRange_km": 0.2,
+   "maxRange_km": 6.95,
+   "angleError_rad": 0.002417,
+   "burstCount": 0,
+   "targetFlags": 15,
+   "detonationRange_m": 0.0,
+   "probNoFaults": 1.0,
+   "damageModel": "SolidProjectile",
+   "damageEffect": "ToughWeapon"
+  },
   "20mm PGU": {
    "name": "20mm PGU",
    "type": "autocannon",
@@ -2107,6 +3988,21 @@
    "angleError_rad": 0.008,
    "burstCount": 11,
    "targetFlags": 7,
+   "detonationRange_m": 0.0,
+   "probNoFaults": 1.0,
+   "damageModel": "SolidProjectile",
+   "damageEffect": "ToughWeapon"
+  },
+  "30mm DEFA": {
+   "name": "30mm DEFA",
+   "type": "autocannon",
+   "weight_kg": 0.39,
+   "launchSpeed_mps": 815.0,
+   "minRange_km": 0.2,
+   "maxRange_km": 4.0,
+   "angleError_rad": 0.0022,
+   "burstCount": 5,
+   "targetFlags": 15,
    "detonationRange_m": 0.0,
    "probNoFaults": 1.0,
    "damageModel": "SolidProjectile",
@@ -2235,6 +4131,94 @@
    "fragFragment_kg": 0.0,
    "fragSpread": 1.0
   },
+  "BlastFragAir24kg": {
+   "maxRange_m": 2993.749158,
+   "probDetonate": 0.85,
+   "isPenetration": false,
+   "blastCharge_kg": 5.31886916,
+   "fragCharge_kg": 10.37408723,
+   "radCharge_kg": 0.531886916,
+   "fragMetal_kg": 8.307043613,
+   "fragFragment_kg": 0.024289601,
+   "fragSpread": 0.225625
+  },
+  "Pen3kg": {
+   "maxRange_m": 16.01807,
+   "probDetonate": 0.85,
+   "isPenetration": true,
+   "blastCharge_kg": 2.1,
+   "fragCharge_kg": 0.0,
+   "radCharge_kg": 0.3,
+   "fragMetal_kg": 0.0,
+   "fragFragment_kg": 0.0,
+   "fragSpread": 0.0
+  },
+  "BlastFragMis14kg": {
+   "maxRange_m": 2595.346085,
+   "probDetonate": 0.85,
+   "isPenetration": false,
+   "blastCharge_kg": 3.288779728,
+   "fragCharge_kg": 5.927480181,
+   "radCharge_kg": 0.328877973,
+   "fragMetal_kg": 4.783740091,
+   "fragFragment_kg": 0.01825855,
+   "fragSpread": 0.132415123
+  },
+  "Pen165kg": {
+   "maxRange_m": 60.83463,
+   "probDetonate": 0.85,
+   "isPenetration": true,
+   "blastCharge_kg": 115.5,
+   "fragCharge_kg": 0.0,
+   "radCharge_kg": 16.5,
+   "fragMetal_kg": 0.0,
+   "fragFragment_kg": 0.0,
+   "fragSpread": 0.0
+  },
+  "SolidPen0.05kg": {
+   "maxRange_m": 18.91483218,
+   "probDetonate": 1.0,
+   "isPenetration": true,
+   "blastCharge_kg": 0.05,
+   "fragCharge_kg": 0.0,
+   "radCharge_kg": 0.0,
+   "fragMetal_kg": 0.0,
+   "fragFragment_kg": 0.0,
+   "fragSpread": 1.0
+  },
+  "BlastFragMis35kg": {
+   "maxRange_m": 3236.05578,
+   "probDetonate": 0.85,
+   "isPenetration": false,
+   "blastCharge_kg": 7.431001468,
+   "fragCharge_kg": 15.34599902,
+   "radCharge_kg": 0.743100147,
+   "fragMetal_kg": 12.22299951,
+   "fragFragment_kg": 0.02842558,
+   "fragSpread": 0.3
+  },
+  "Blast450kg": {
+   "maxRange_m": 95.68214,
+   "probDetonate": 0.85,
+   "isPenetration": false,
+   "blastCharge_kg": 450.0,
+   "fragCharge_kg": 0.0,
+   "radCharge_kg": 45.0,
+   "fragMetal_kg": 0.0,
+   "fragFragment_kg": 0.0,
+   "fragSpread": 0.0
+  },
+  "BlastFragAir50kg": {
+   "maxRange_m": 3431.063124,
+   "probDetonate": 0.85,
+   "isPenetration": false,
+   "blastCharge_kg": 10.17588206,
+   "fragCharge_kg": 22.21607863,
+   "radCharge_kg": 1.017588206,
+   "fragMetal_kg": 17.60803931,
+   "fragFragment_kg": 0.032014617,
+   "fragSpread": 0.3
+  },
   "BlastFragAir22kg": {
    "maxRange_m": 2933.090039,
    "probDetonate": 0.85,
@@ -2267,6 +4251,17 @@
    "fragMetal_kg": 0.0,
    "fragFragment_kg": 0.0,
    "fragSpread": 0.0
+  },
+  "BlastFragAir12.5kg": {
+   "maxRange_m": 2506.228137,
+   "probDetonate": 0.85,
+   "isPenetration": false,
+   "blastCharge_kg": 2.971348337,
+   "fragCharge_kg": 5.269101108,
+   "radCharge_kg": 0.297134834,
+   "fragMetal_kg": 4.259550554,
+   "fragFragment_kg": 0.017038202,
+   "fragSpread": 0.120563272
   }
  },
  "damageEffects": {
@@ -4210,6 +6205,1334 @@
     ]
    ]
   },
+  "Type 42 DDG Batch 1 durability": {
+   "blast": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     2.72,
+     0.0
+    ],
+    [
+     2.85,
+     0.1
+    ],
+    [
+     3.23,
+     0.2
+    ],
+    [
+     3.87,
+     0.3
+    ],
+    [
+     4.77,
+     0.4
+    ],
+    [
+     5.92,
+     0.5
+    ],
+    [
+     7.33,
+     0.6
+    ],
+    [
+     9.0,
+     0.7
+    ],
+    [
+     10.92,
+     0.8
+    ],
+    [
+     13.1,
+     0.9
+    ],
+    [
+     15.53,
+     1.0
+    ],
+    [
+     19.57,
+     2.0
+    ]
+   ],
+   "waterBlast": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     121.7,
+     0.04
+    ],
+    [
+     138.398,
+     0.042
+    ],
+    [
+     157.306,
+     0.043
+    ],
+    [
+     178.706,
+     0.045
+    ],
+    [
+     202.914,
+     0.048
+    ],
+    [
+     230.288,
+     0.05
+    ],
+    [
+     261.23,
+     0.053
+    ],
+    [
+     296.197,
+     0.056
+    ],
+    [
+     335.703,
+     0.059
+    ],
+    [
+     380.335,
+     0.062
+    ],
+    [
+     430.766,
+     0.067
+    ],
+    [
+     487.766,
+     0.071
+    ],
+    [
+     552.233,
+     0.077
+    ],
+    [
+     625.224,
+     0.083
+    ],
+    [
+     708.0,
+     0.091
+    ],
+    [
+     802.103,
+     0.1
+    ],
+    [
+     909.466,
+     0.111
+    ],
+    [
+     1032.608,
+     0.125
+    ],
+    [
+     1174.956,
+     0.143
+    ],
+    [
+     1341.468,
+     0.167
+    ],
+    [
+     1539.877,
+     0.2
+    ],
+    [
+     1783.53,
+     0.25
+    ],
+    [
+     2098.929,
+     0.333
+    ],
+    [
+     2551.422,
+     0.5
+    ],
+    [
+     3384.908,
+     1.0
+    ],
+    [
+     4365.511,
+     2.0
+    ],
+    [
+     5577.391,
+     4.0
+    ]
+   ],
+   "frag": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     689298.67955,
+     0.0
+    ],
+    [
+     1000000.0,
+     0.0176
+    ],
+    [
+     3000000.0,
+     0.03048
+    ],
+    [
+     6000000.0,
+     0.04311
+    ],
+    [
+     10000000.0,
+     0.05565
+    ],
+    [
+     30000000.0,
+     0.0964
+    ],
+    [
+     60000000.0,
+     0.13632
+    ],
+    [
+     100000000.0,
+     0.17599
+    ],
+    [
+     300000000.0,
+     0.30483
+    ],
+    [
+     600000000.0,
+     0.4311
+    ],
+    [
+     1000000000.0,
+     0.55654
+    ],
+    [
+     3000000000.0,
+     0.96396
+    ],
+    [
+     6000000000.0,
+     1.36324
+    ],
+    [
+     10000000000.0,
+     1.75994
+    ],
+    [
+     30000000000.0,
+     3.04831
+    ],
+    [
+     60000000000.0,
+     4.31096
+    ],
+    [
+     100000000000.0,
+     5.56542
+    ],
+    [
+     300000000000.0,
+     9.63959
+    ],
+    [
+     600000000000.0,
+     13.63244
+    ]
+   ],
+   "rad": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     5000.0,
+     0.0
+    ],
+    [
+     25000.0,
+     0.4
+    ],
+    [
+     50000.0,
+     2.0
+    ],
+    [
+     125000.0,
+     5.0
+    ],
+    [
+     250000.0,
+     20.0
+    ]
+   ],
+   "internal": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     1.0,
+     0.00389
+    ],
+    [
+     2.0,
+     0.00779
+    ],
+    [
+     4.0,
+     0.01557
+    ],
+    [
+     8.0,
+     0.03115
+    ],
+    [
+     16.0,
+     0.06228
+    ],
+    [
+     32.0,
+     0.12459
+    ],
+    [
+     64.0,
+     0.24913
+    ],
+    [
+     128.0,
+     0.49834
+    ],
+    [
+     256.0,
+     0.99657
+    ],
+    [
+     512.0,
+     1.99329
+    ],
+    [
+     1024.0,
+     3.9863
+    ],
+    [
+     2048.0,
+     7.97259
+    ],
+    [
+     4096.0,
+     15.94631
+    ]
+   ]
+  },
+  "Type 22 FF Batch 1 durability": {
+   "blast": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     2.75,
+     0.0
+    ],
+    [
+     2.89,
+     0.1
+    ],
+    [
+     3.28,
+     0.2
+    ],
+    [
+     3.94,
+     0.3
+    ],
+    [
+     4.87,
+     0.4
+    ],
+    [
+     6.05,
+     0.5
+    ],
+    [
+     7.5,
+     0.6
+    ],
+    [
+     9.22,
+     0.7
+    ],
+    [
+     11.2,
+     0.8
+    ],
+    [
+     13.44,
+     0.9
+    ],
+    [
+     15.95,
+     1.0
+    ],
+    [
+     20.1,
+     2.0
+    ]
+   ],
+   "waterBlast": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     121.637,
+     0.04
+    ],
+    [
+     138.326,
+     0.042
+    ],
+    [
+     157.225,
+     0.043
+    ],
+    [
+     178.613,
+     0.045
+    ],
+    [
+     202.808,
+     0.048
+    ],
+    [
+     230.168,
+     0.05
+    ],
+    [
+     261.094,
+     0.053
+    ],
+    [
+     296.043,
+     0.056
+    ],
+    [
+     335.528,
+     0.059
+    ],
+    [
+     380.138,
+     0.062
+    ],
+    [
+     430.542,
+     0.067
+    ],
+    [
+     487.512,
+     0.071
+    ],
+    [
+     551.946,
+     0.077
+    ],
+    [
+     624.899,
+     0.083
+    ],
+    [
+     707.632,
+     0.091
+    ],
+    [
+     801.686,
+     0.1
+    ],
+    [
+     908.994,
+     0.111
+    ],
+    [
+     1032.071,
+     0.125
+    ],
+    [
+     1174.345,
+     0.143
+    ],
+    [
+     1340.771,
+     0.167
+    ],
+    [
+     1539.077,
+     0.2
+    ],
+    [
+     1782.603,
+     0.25
+    ],
+    [
+     2097.838,
+     0.333
+    ],
+    [
+     2550.096,
+     0.5
+    ],
+    [
+     3383.149,
+     1.0
+    ],
+    [
+     4363.243,
+     2.0
+    ],
+    [
+     5574.493,
+     4.0
+    ]
+   ],
+   "frag": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     741064.46016,
+     0.0
+    ],
+    [
+     1000000.0,
+     0.01702
+    ],
+    [
+     3000000.0,
+     0.02949
+    ],
+    [
+     6000000.0,
+     0.0417
+    ],
+    [
+     10000000.0,
+     0.05384
+    ],
+    [
+     30000000.0,
+     0.09325
+    ],
+    [
+     60000000.0,
+     0.13187
+    ],
+    [
+     100000000.0,
+     0.17025
+    ],
+    [
+     300000000.0,
+     0.29488
+    ],
+    [
+     600000000.0,
+     0.41702
+    ],
+    [
+     1000000000.0,
+     0.53837
+    ],
+    [
+     3000000000.0,
+     0.93249
+    ],
+    [
+     6000000000.0,
+     1.31874
+    ],
+    [
+     10000000000.0,
+     1.70249
+    ],
+    [
+     30000000000.0,
+     2.9488
+    ],
+    [
+     60000000000.0,
+     4.17023
+    ],
+    [
+     100000000000.0,
+     5.38374
+    ],
+    [
+     300000000000.0,
+     9.32491
+    ],
+    [
+     600000000000.0,
+     13.18742
+    ]
+   ],
+   "rad": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     5000.0,
+     0.0
+    ],
+    [
+     25000.0,
+     0.4
+    ],
+    [
+     50000.0,
+     2.0
+    ],
+    [
+     125000.0,
+     5.0
+    ],
+    [
+     250000.0,
+     20.0
+    ]
+   ],
+   "internal": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     1.0,
+     0.00367
+    ],
+    [
+     2.0,
+     0.00733
+    ],
+    [
+     4.0,
+     0.01467
+    ],
+    [
+     8.0,
+     0.02934
+    ],
+    [
+     16.0,
+     0.0587
+    ],
+    [
+     32.0,
+     0.11737
+    ],
+    [
+     64.0,
+     0.23476
+    ],
+    [
+     128.0,
+     0.4695
+    ],
+    [
+     256.0,
+     0.93896
+    ],
+    [
+     512.0,
+     1.87809
+    ],
+    [
+     1024.0,
+     3.75602
+    ],
+    [
+     2048.0,
+     7.51236
+    ],
+    [
+     4096.0,
+     15.02474
+    ]
+   ]
+  },
+  "Spruance DDG durability": {
+   "blast": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     2.73,
+     0.0
+    ],
+    [
+     2.87,
+     0.1
+    ],
+    [
+     3.3,
+     0.2
+    ],
+    [
+     4.02,
+     0.3
+    ],
+    [
+     5.02,
+     0.4
+    ],
+    [
+     6.31,
+     0.5
+    ],
+    [
+     7.88,
+     0.6
+    ],
+    [
+     9.75,
+     0.7
+    ],
+    [
+     11.9,
+     0.8
+    ],
+    [
+     14.33,
+     0.9
+    ],
+    [
+     17.05,
+     1.0
+    ],
+    [
+     21.49,
+     2.0
+    ]
+   ],
+   "waterBlast": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     107.158,
+     0.04
+    ],
+    [
+     121.861,
+     0.042
+    ],
+    [
+     138.51,
+     0.043
+    ],
+    [
+     157.352,
+     0.045
+    ],
+    [
+     178.668,
+     0.048
+    ],
+    [
+     202.771,
+     0.05
+    ],
+    [
+     230.016,
+     0.053
+    ],
+    [
+     260.804,
+     0.056
+    ],
+    [
+     295.59,
+     0.059
+    ],
+    [
+     334.889,
+     0.062
+    ],
+    [
+     379.294,
+     0.067
+    ],
+    [
+     429.483,
+     0.071
+    ],
+    [
+     486.247,
+     0.077
+    ],
+    [
+     550.516,
+     0.083
+    ],
+    [
+     623.401,
+     0.091
+    ],
+    [
+     706.26,
+     0.1
+    ],
+    [
+     800.794,
+     0.111
+    ],
+    [
+     909.222,
+     0.125
+    ],
+    [
+     1034.561,
+     0.143
+    ],
+    [
+     1181.176,
+     0.167
+    ],
+    [
+     1355.878,
+     0.2
+    ],
+    [
+     1570.416,
+     0.25
+    ],
+    [
+     1848.128,
+     0.333
+    ],
+    [
+     2246.553,
+     0.5
+    ],
+    [
+     2980.447,
+     1.0
+    ],
+    [
+     3843.877,
+     2.0
+    ],
+    [
+     4910.951,
+     4.0
+    ]
+   ],
+   "frag": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     1217234.73874,
+     0.0
+    ],
+    [
+     3000000.0,
+     0.02312
+    ],
+    [
+     6000000.0,
+     0.0327
+    ],
+    [
+     10000000.0,
+     0.04222
+    ],
+    [
+     30000000.0,
+     0.07312
+    ],
+    [
+     60000000.0,
+     0.10341
+    ],
+    [
+     100000000.0,
+     0.1335
+    ],
+    [
+     300000000.0,
+     0.23123
+    ],
+    [
+     600000000.0,
+     0.32701
+    ],
+    [
+     1000000000.0,
+     0.42217
+    ],
+    [
+     3000000000.0,
+     0.73121
+    ],
+    [
+     6000000000.0,
+     1.03409
+    ],
+    [
+     10000000000.0,
+     1.33501
+    ],
+    [
+     30000000000.0,
+     2.3123
+    ],
+    [
+     60000000000.0,
+     3.27009
+    ],
+    [
+     100000000000.0,
+     4.22167
+    ],
+    [
+     300000000000.0,
+     7.31214
+    ],
+    [
+     600000000000.0,
+     10.34093
+    ]
+   ],
+   "rad": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     5000.0,
+     0.0
+    ],
+    [
+     25000.0,
+     0.4
+    ],
+    [
+     50000.0,
+     2.0
+    ],
+    [
+     125000.0,
+     5.0
+    ],
+    [
+     250000.0,
+     20.0
+    ]
+   ],
+   "internal": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     1.0,
+     0.00186
+    ],
+    [
+     2.0,
+     0.00373
+    ],
+    [
+     4.0,
+     0.00745
+    ],
+    [
+     8.0,
+     0.01491
+    ],
+    [
+     16.0,
+     0.02983
+    ],
+    [
+     32.0,
+     0.05965
+    ],
+    [
+     64.0,
+     0.11928
+    ],
+    [
+     128.0,
+     0.23856
+    ],
+    [
+     256.0,
+     0.4772
+    ],
+    [
+     512.0,
+     0.95426
+    ],
+    [
+     1024.0,
+     1.90873
+    ],
+    [
+     2048.0,
+     3.81727
+    ],
+    [
+     4096.0,
+     7.63464
+    ],
+    [
+     8192.0,
+     15.26896
+    ]
+   ]
+  },
+  "Pr 1234E Ovod-E (Libya) durability": {
+   "blast": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     2.77,
+     0.0
+    ],
+    [
+     2.87,
+     0.1
+    ],
+    [
+     3.17,
+     0.2
+    ],
+    [
+     3.66,
+     0.3
+    ],
+    [
+     4.36,
+     0.4
+    ],
+    [
+     5.25,
+     0.5
+    ],
+    [
+     6.34,
+     0.6
+    ],
+    [
+     7.63,
+     0.7
+    ],
+    [
+     9.11,
+     0.8
+    ],
+    [
+     10.79,
+     0.9
+    ],
+    [
+     12.68,
+     1.0
+    ],
+    [
+     15.97,
+     2.0
+    ]
+   ],
+   "waterBlast": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     69.432,
+     0.042
+    ],
+    [
+     78.918,
+     0.043
+    ],
+    [
+     89.654,
+     0.045
+    ],
+    [
+     101.798,
+     0.048
+    ],
+    [
+     115.531,
+     0.05
+    ],
+    [
+     131.055,
+     0.053
+    ],
+    [
+     148.597,
+     0.056
+    ],
+    [
+     168.416,
+     0.059
+    ],
+    [
+     190.808,
+     0.062
+    ],
+    [
+     216.108,
+     0.067
+    ],
+    [
+     244.704,
+     0.071
+    ],
+    [
+     277.046,
+     0.077
+    ],
+    [
+     313.664,
+     0.083
+    ],
+    [
+     355.191,
+     0.091
+    ],
+    [
+     402.401,
+     0.1
+    ],
+    [
+     456.263,
+     0.111
+    ],
+    [
+     518.041,
+     0.125
+    ],
+    [
+     589.455,
+     0.143
+    ],
+    [
+     672.991,
+     0.167
+    ],
+    [
+     772.53,
+     0.2
+    ],
+    [
+     894.766,
+     0.25
+    ],
+    [
+     1052.996,
+     0.333
+    ],
+    [
+     1280.004,
+     0.5
+    ],
+    [
+     1698.15,
+     1.0
+    ],
+    [
+     2190.101,
+     2.0
+    ],
+    [
+     2798.081,
+     4.0
+    ]
+   ],
+   "frag": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     155373.6745,
+     0.0
+    ],
+    [
+     300000.0,
+     0.01994
+    ],
+    [
+     600000.0,
+     0.0282
+    ],
+    [
+     1000000.0,
+     0.0364
+    ],
+    [
+     3000000.0,
+     0.06305
+    ],
+    [
+     6000000.0,
+     0.08916
+    ],
+    [
+     10000000.0,
+     0.11511
+    ],
+    [
+     30000000.0,
+     0.19938
+    ],
+    [
+     60000000.0,
+     0.28196
+    ],
+    [
+     100000000.0,
+     0.36401
+    ],
+    [
+     300000000.0,
+     0.63049
+    ],
+    [
+     600000000.0,
+     0.89164
+    ],
+    [
+     1000000000.0,
+     1.15111
+    ],
+    [
+     3000000000.0,
+     1.99377
+    ],
+    [
+     6000000000.0,
+     2.81962
+    ],
+    [
+     10000000000.0,
+     3.64012
+    ],
+    [
+     30000000000.0,
+     6.30487
+    ],
+    [
+     60000000000.0,
+     8.91643
+    ],
+    [
+     100000000000.0,
+     11.51106
+    ]
+   ],
+   "rad": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     5000.0,
+     0.0
+    ],
+    [
+     25000.0,
+     0.4
+    ],
+    [
+     50000.0,
+     2.0
+    ],
+    [
+     125000.0,
+     5.0
+    ],
+    [
+     250000.0,
+     20.0
+    ]
+   ],
+   "internal": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     1.0,
+     0.02814
+    ],
+    [
+     2.0,
+     0.05629
+    ],
+    [
+     4.0,
+     0.11256
+    ],
+    [
+     8.0,
+     0.22505
+    ],
+    [
+     16.0,
+     0.45015
+    ],
+    [
+     32.0,
+     0.90045
+    ],
+    [
+     64.0,
+     1.80081
+    ],
+    [
+     128.0,
+     3.60122
+    ],
+    [
+     256.0,
+     7.20246
+    ],
+    [
+     512.0,
+     14.4047
+    ]
+   ]
+  },
   "P-3C III Orion durability": {
    "blast": [
     [
@@ -4785,6 +8108,294 @@
      38.34278
     ]
    ]
+  },
+  "Super Etendard M durability": {
+   "blast": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     2.01,
+     0.0
+    ],
+    [
+     2.1,
+     0.1
+    ],
+    [
+     2.37,
+     0.2
+    ],
+    [
+     2.82,
+     0.3
+    ],
+    [
+     3.44,
+     0.4
+    ],
+    [
+     4.25,
+     0.5
+    ],
+    [
+     5.24,
+     0.6
+    ],
+    [
+     6.4,
+     0.7
+    ],
+    [
+     7.75,
+     0.8
+    ],
+    [
+     9.27,
+     0.9
+    ],
+    [
+     10.98,
+     1.0
+    ],
+    [
+     13.83,
+     2.0
+    ]
+   ],
+   "waterBlast": [
+    [
+     0.0,
+     0.0
+    ]
+   ],
+   "frag": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     1500.0,
+     0.0
+    ],
+    [
+     3000.0,
+     0.02974
+    ],
+    [
+     6000.0,
+     0.05948
+    ],
+    [
+     10000.0,
+     0.09914
+    ],
+    [
+     30000.0,
+     0.29742
+    ],
+    [
+     60000.0,
+     0.59483
+    ],
+    [
+     100000.0,
+     0.99139
+    ],
+    [
+     300000.0,
+     2.97417
+    ],
+    [
+     600000.0,
+     5.94834
+    ],
+    [
+     1000000.0,
+     9.9139
+    ],
+    [
+     3000000.0,
+     29.74171
+    ]
+   ],
+   "rad": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     3000.0,
+     0.0
+    ],
+    [
+     5000.0,
+     1.0
+    ],
+    [
+     10000.0,
+     2.0
+    ],
+    [
+     30000.0,
+     20.0
+    ]
+   ],
+   "internal": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     1.0,
+     89.15419
+    ]
+   ]
+  },
+  "A-6E durability": {
+   "blast": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     2.02,
+     0.0
+    ],
+    [
+     2.12,
+     0.1
+    ],
+    [
+     2.41,
+     0.2
+    ],
+    [
+     2.91,
+     0.3
+    ],
+    [
+     3.6,
+     0.4
+    ],
+    [
+     4.49,
+     0.5
+    ],
+    [
+     5.57,
+     0.6
+    ],
+    [
+     6.86,
+     0.7
+    ],
+    [
+     8.34,
+     0.8
+    ],
+    [
+     10.01,
+     0.9
+    ],
+    [
+     11.89,
+     1.0
+    ],
+    [
+     14.98,
+     2.0
+    ]
+   ],
+   "waterBlast": [
+    [
+     0.0,
+     0.0
+    ]
+   ],
+   "frag": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     1500.0,
+     0.0
+    ],
+    [
+     3000.0,
+     0.02692
+    ],
+    [
+     6000.0,
+     0.05384
+    ],
+    [
+     10000.0,
+     0.08973
+    ],
+    [
+     30000.0,
+     0.26918
+    ],
+    [
+     60000.0,
+     0.53836
+    ],
+    [
+     100000.0,
+     0.89727
+    ],
+    [
+     300000.0,
+     2.6918
+    ],
+    [
+     600000.0,
+     5.38359
+    ],
+    [
+     1000000.0,
+     8.97266
+    ],
+    [
+     3000000.0,
+     26.91797
+    ]
+   ],
+   "rad": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     3000.0,
+     0.0
+    ],
+    [
+     5000.0,
+     1.0
+    ],
+    [
+     10000.0,
+     2.0
+    ],
+    [
+     30000.0,
+     20.0
+    ]
+   ],
+   "internal": [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     1.0,
+     73.37655
+    ]
+   ]
   }
  },
  "signatures": {
@@ -4809,6 +8420,69 @@
    -3.0,
    -3.0
   ],
+  "IR_M_M_R_M0.85": [
+   -3.63,
+   -3.63,
+   -3.63,
+   -5.63,
+   -6.63,
+   -7.63,
+   -7.63,
+   -7.63,
+   2.66,
+   5.21,
+   6.64,
+   7.71,
+   8.68,
+   9.47,
+   9.47,
+   10.72,
+   11.23,
+   12.0,
+   12.66
+  ],
+  "IR_M_S_R_M0.85": [
+   -4.63,
+   -4.63,
+   -4.63,
+   -6.63,
+   -7.63,
+   -8.63,
+   -8.63,
+   -8.63,
+   2.16,
+   4.71,
+   6.14,
+   7.21,
+   8.18,
+   8.97,
+   8.97,
+   10.22,
+   10.73,
+   11.5,
+   12.16
+  ],
+  "IR_M_M_LP_M0.85": [
+   -3.63,
+   -3.63,
+   -3.63,
+   -5.63,
+   -6.63,
+   -7.63,
+   -7.63,
+   -7.63,
+   -5.42,
+   -2.87,
+   -1.44,
+   -0.37,
+   0.6,
+   1.39,
+   1.39,
+   2.64,
+   3.15,
+   3.92,
+   4.58
+  ],
   "ShipRCS1": [
    0.0,
    0.0,
@@ -4830,6 +8504,111 @@
    0.0,
    0.0
   ],
+  "ShipIR1": [
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ],
+  "IR_M_VL_LP_M0.85": [
+   -1.63,
+   -1.63,
+   -1.63,
+   -3.63,
+   -4.63,
+   -5.63,
+   -5.63,
+   -5.63,
+   -4.42,
+   -1.87,
+   -0.44,
+   0.63,
+   1.6,
+   2.39,
+   2.39,
+   3.64,
+   4.15,
+   4.92,
+   5.58
+  ],
+  "IR_M_VL_R_M0.85": [
+   -1.63,
+   -1.63,
+   -1.63,
+   -3.63,
+   -4.63,
+   -5.63,
+   -5.63,
+   -5.63,
+   3.66,
+   6.21,
+   7.64,
+   8.71,
+   9.68,
+   10.47,
+   10.47,
+   11.72,
+   12.23,
+   13.0,
+   13.66
+  ],
+  "IR_M_VS_R_M0.85": [
+   -5.63,
+   -5.63,
+   -5.63,
+   -7.63,
+   -8.63,
+   -9.63,
+   -9.63,
+   -9.63,
+   1.66,
+   4.21,
+   5.64,
+   6.71,
+   7.68,
+   8.47,
+   8.47,
+   9.72,
+   10.23,
+   11.0,
+   11.66
+  ],
+  "IR_M_L_R_M0.85": [
+   -2.63,
+   -2.63,
+   -2.63,
+   -4.63,
+   -5.63,
+   -6.63,
+   -6.63,
+   -6.63,
+   3.16,
+   5.71,
+   7.14,
+   8.21,
+   9.18,
+   9.97,
+   9.97,
+   11.22,
+   11.73,
+   12.5,
+   13.16
+  ],
   "AirRCS1": [
    0.0,
    1.0,
@@ -4850,6 +8629,153 @@
    0.0,
    1.0,
    3.0
+  ],
+  "IR_FW_M_H_TP_4_M0.85": [
+   4.37,
+   4.37,
+   4.37,
+   3.37,
+   3.37,
+   2.37,
+   2.37,
+   2.37,
+   2.37,
+   4.62,
+   7.17,
+   8.6,
+   9.67,
+   10.64,
+   11.61,
+   11.61,
+   12.61,
+   13.6,
+   14.62
+  ],
+  "AirIR1": [
+   2.0,
+   2.0,
+   2.0,
+   1.0,
+   1.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   0.0,
+   2.0,
+   2.0,
+   3.0,
+   3.0,
+   3.0,
+   3.0,
+   4.0,
+   5.0
+  ],
+  "IR_FW_L_F_HP_2_M0.85": [
+   3.13,
+   3.13,
+   3.13,
+   2.13,
+   2.13,
+   1.13,
+   1.13,
+   1.13,
+   1.13,
+   5.17,
+   7.72,
+   9.15,
+   10.22,
+   11.19,
+   12.16,
+   12.16,
+   13.16,
+   14.15,
+   15.17
+  ],
+  "IR_FW_M_H_HP_2_M0.85": [
+   4.37,
+   4.37,
+   4.37,
+   3.37,
+   3.37,
+   2.37,
+   2.37,
+   2.37,
+   2.37,
+   5.17,
+   7.72,
+   9.15,
+   10.22,
+   11.19,
+   12.16,
+   12.16,
+   13.16,
+   14.15,
+   15.17
+  ],
+  "IR_FW_S_F_HP_1_M0.85": [
+   -0.37,
+   -0.37,
+   -0.37,
+   -1.37,
+   -1.37,
+   -2.37,
+   -2.37,
+   -2.37,
+   -2.37,
+   2.17,
+   4.72,
+   6.15,
+   7.22,
+   8.19,
+   9.16,
+   9.16,
+   10.16,
+   11.15,
+   12.17
+  ],
+  "IR_M_S_LP_M0.85": [
+   -4.63,
+   -4.63,
+   -4.63,
+   -6.63,
+   -7.63,
+   -8.63,
+   -8.63,
+   -8.63,
+   -5.92,
+   -3.37,
+   -1.94,
+   -0.87,
+   0.1,
+   0.89,
+   0.89,
+   2.14,
+   2.65,
+   3.42,
+   4.08
+  ],
+  "IR_FW_M_F_HP_2_M0.85": [
+   1.37,
+   1.37,
+   1.37,
+   0.37,
+   0.37,
+   -0.63,
+   -0.63,
+   -0.63,
+   -0.63,
+   5.17,
+   7.72,
+   9.15,
+   10.22,
+   11.19,
+   12.16,
+   12.16,
+   13.16,
+   14.15,
+   15.17
   ]
  }
 }
