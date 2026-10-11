@@ -4,6 +4,8 @@
 import { World, isAntiShip } from "../sim/world.js";
 import { predict } from "../sim/missile.js";
 import { DEG, bearing, groundRange_m } from "../sim/geo.js";
+import { buildShipGltf } from "./models.js";
+import { Effects } from "./effects.js";
 
 const PLAYER = "blue";
 const SIM_DT = 0.1;
@@ -101,10 +103,39 @@ function upsert(key, make) {
   return e;
 }
 
+/**
+ * Set a polyline's points. Lines that change every frame must use a CallbackProperty:
+ * a new constant array each frame restarts Cesium's background geometry build, so the
+ * line never appears.
+ */
+function setLine(e, pts) {
+  if (!e._line) {
+    e._line = true;
+    e.polyline.positions = new Cesium.CallbackProperty(() => e._pts || [], false);
+  }
+  e._pts = pts;
+}
+
 let selectedId = world.ships(PLAYER)[0]?.id ?? null;
 let showTruth = false;
 
+// one generated glTF per ship class
+const modelUris = new Map();
+function shipModel(className) {
+  if (!modelUris.has(className)) {
+    const db = data.ships[className];
+    modelUris.set(className, db ? buildShipGltf(db, db.country === "USA" ? "us" : "soviet") : null);
+  }
+  return modelUris.get(className);
+}
+
+const SINK_S = 150; // sim seconds for a sunk ship to settle and disappear
+const deathTime = new Map(); // ship id -> sim time first seen dead
+const trackedEnemies = new Set(); // enemy ships the player has held on radar
+
 function shipEntity(key, o, side, isTrack) {
+  const className = o.className || o.db?.name;
+  const uri = shipModel(className);
   const e = upsert(key, () => ({
     billboard: { image: SYMBOLS[`${side}-ship`], verticalOrigin: Cesium.VerticalOrigin.CENTER, disableDepthTestDistance: Number.POSITIVE_INFINITY },
     label: {
@@ -112,28 +143,57 @@ function shipEntity(key, o, side, isTrack) {
       style: Cesium.LabelStyle.FILL_AND_OUTLINE, pixelOffset: new Cesium.Cartesian2(0, -24),
       disableDepthTestDistance: Number.POSITIVE_INFINITY,
     },
-    box: { dimensions: new Cesium.Cartesian3(1, 1, 1), material: COLORS[side].withAlpha(0.9), outline: false },
+    model: uri ? { uri, minimumPixelSize: 0, shadows: Cesium.ShadowMode.DISABLED } : undefined,
   }));
-  e.position = pos(o, 0);
-  const hpr = new Cesium.HeadingPitchRoll(o.heading - Math.PI / 2, 0, 0);
-  e.orientation = Cesium.Transforms.headingPitchRollQuaternion(pos(o), hpr);
-  const db = data.ships[o.className || o.db?.name];
-  if (db) e.box.dimensions = new Cesium.Cartesian3(db.length_m, Math.max(db.beam_m, 8), 2 * db.effectiveHeight_m);
-  e.box.show = !isTrack || o.error_m === 0;
   const dead = o.dead;
+  // sinking: settle, list and go down over SINK_S, then only the grey symbol remains
+  let sink = 0;
+  if (dead) {
+    if (!deathTime.has(o.id)) deathTime.set(o.id, world.t);
+    sink = Math.min(1, (world.t - deathTime.get(o.id)) / SINK_S);
+  }
+  const depth = sink * 3 * (data.ships[className]?.effectiveHeight_m || 10);
+  const p = Cesium.Cartesian3.fromRadians(o.lon, o.lat, -depth);
+  e.position = p;
+  const hpr = new Cesium.HeadingPitchRoll(o.heading - Math.PI / 2, -0.08 * sink, 0.35 * sink);
+  e.orientation = Cesium.Transforms.headingPitchRollQuaternion(p, hpr);
+  if (e.model) e.model.show = (!isTrack || o.error_m === 0) && sink < 1;
   e.label.text = isTrack ? `${o.className}${o.error_m ? " (reported)" : ""}` : `${o.name}${dead ? " (sunk)" : ""}`;
   e.billboard.color = dead ? Cesium.Color.GRAY : Cesium.Color.WHITE;
   e._objId = o.id;
   return e;
 }
 
+// ship wakes: recent positions sampled in sim time
+const WAKE_SAMPLE_S = 10;
+const WAKE_POINTS = 12;
+const wakes = new Map(); // id -> {last, pts}
+function wakeEntity(o) {
+  let w = wakes.get(o.id);
+  if (!w) wakes.set(o.id, (w = { last: -1e9, pts: [] }));
+  if (world.t - w.last >= WAKE_SAMPLE_S) {
+    w.last = world.t;
+    w.pts.push(Cesium.Cartesian3.fromRadians(o.lon, o.lat, 1));
+    if (w.pts.length > WAKE_POINTS) w.pts.shift();
+  }
+  if (o.dead || o.speed_kts < 1 || w.pts.length < 2) return;
+  const e = upsert(`w${o.id}`, () => ({
+    polyline: { positions: [], width: 6, material: new Cesium.PolylineGlowMaterialProperty({ glowPower: 0.3, color: Cesium.Color.WHITE.withAlpha(0.35) }) },
+  }));
+  setLine(e, [...w.pts, Cesium.Cartesian3.fromRadians(o.lon, o.lat, 1)]);
+}
+
+const effects = new Effects(viewer);
+const seenDetonations = new Set();
+
 function missileEntity(key, o, side) {
   const e = upsert(key, () => ({
     billboard: { image: SYMBOLS[`${side}-missile`], disableDepthTestDistance: Number.POSITIVE_INFINITY },
-    polyline: { positions: [], width: 1.5, material: COLORS[side].withAlpha(0.7) },
+    // smoke trail
+    polyline: { positions: [], width: 5, material: new Cesium.PolylineGlowMaterialProperty({ glowPower: 0.25, color: Cesium.Color.WHITE.withAlpha(0.5) }) },
   }));
   e.position = pos(o);
-  if (o.trail) e.polyline.positions = [...o.trail.map((p) => pos(p)), pos(o)];
+  if (o.trail) setLine(e, [...o.trail.map((p) => pos(p)), pos(o)]);
   e._objId = o.id;
   return e;
 }
@@ -176,18 +236,58 @@ function ring(key, center, radius_m, color, dashed) {
     const d = radius_m / 6378140;
     const lat = Math.asin(Math.sin(p.lat) * Math.cos(d) + Math.cos(p.lat) * Math.sin(d) * Math.cos(a * DEG));
     const lon = p.lon + Math.atan2(Math.sin(a * DEG) * Math.sin(d) * Math.cos(p.lat), Math.cos(d) - Math.sin(p.lat) * Math.sin(lat));
-    pts.push(Cesium.Cartesian3.fromRadians(lon, lat, 30));
+    pts.push(Cesium.Cartesian3.fromRadians(lon, lat, 200));
   }
-  e.polyline.positions = pts;
+  setLine(e, pts);
+  // rings hug the sea surface; draw them even where the globe would hide them
+  if (!e.polyline.depthFailMaterial) e.polyline.depthFailMaterial = e.polyline.material;
+}
+
+/**
+ * Hide labels that would overlap a more important one on screen.
+ * Priority: selected unit, own ships, own aircraft, then contacts.
+ */
+const toWindow = Cesium.SceneTransforms.worldToWindowCoordinates || Cesium.SceneTransforms.wgs84ToWindowCoordinates;
+function declutterLabels() {
+  const time = viewer.clock.currentTime;
+  const items = [];
+  for (const e of entities.values()) {
+    if (!e.label || !e.position) continue;
+    const key = e._key;
+    const prio = e._objId === selectedId ? 0 : key[0] === "o" ? (e.model ? 1 : 2) : 3;
+    items.push({ e, prio });
+  }
+  items.sort((a, b) => a.prio - b.prio);
+  const placed = [];
+  for (const { e } of items) {
+    const p = toWindow(viewer.scene, e.position.getValue(time));
+    if (!p) {
+      e.label.show = false;
+      continue;
+    }
+    const text = e.label.text.getValue(time) || "";
+    const w = 7 * text.length;
+    const r = { x0: p.x - w / 2, x1: p.x + w / 2, y0: p.y - 32, y1: p.y - 16 };
+    const clash = placed.some((q) => r.x0 < q.x1 && r.x1 > q.x0 && r.y0 < q.y1 && r.y1 > q.y0);
+    e.label.show = !clash;
+    if (!clash) placed.push(r);
+  }
 }
 
 function renderGlobe() {
   for (const e of entities.values()) e._seen = false;
 
+  const smoking = new Set();
   for (const o of world.objects.values()) {
-    if (o.side === PLAYER || showTruth) {
-      if (o.kind === "ship") shipEntity(`o${o.id}`, o, o.side, false);
-      else if (o.kind === "round") roundEntity(`o${o.id}`, o);
+    // sinking enemy ships stay visible (their tracks are dropped when they sink)
+    const sunkEnemy = o.kind === "ship" && o.dead && trackedEnemies.has(o.id);
+    if (o.side === PLAYER || showTruth || sunkEnemy) {
+      if (o.kind === "ship") {
+        shipEntity(`o${o.id}`, o, o.side, false);
+        wakeEntity(o);
+        effects.shipSmoke(o, Cesium.Cartesian3.fromRadians(o.lon, o.lat, 20));
+        smoking.add(o.id);
+      } else if (o.kind === "round") roundEntity(`o${o.id}`, o);
       else if (o.kind === "aircraft") airEntity(`o${o.id}`, o, o.side, false);
       else if (!o.dead) missileEntity(`o${o.id}`, o, o.side);
     }
@@ -198,6 +298,14 @@ function renderGlobe() {
       const view = { ...tr, ...p };
       if (tr.kind === "ship") {
         shipEntity(`t${tr.id}`, view, tr.side, true);
+        // damage is visible on ships held by radar
+        const obj = world.get(tr.id);
+        if (obj && tr.error_m === 0) {
+          effects.shipSmoke(obj, Cesium.Cartesian3.fromRadians(view.lon, view.lat, 20));
+          smoking.add(obj.id);
+          // remember tracked ships so their sinking can be shown after the track drops
+          trackedEnemies.add(obj.id);
+        }
         if (tr.error_m > 0) ring(`u${tr.id}`, view, 2 * tr.error_m, COLORS.amber.withAlpha(0.8), true);
       } else if (tr.kind === "aircraft") {
         airEntity(`t${tr.id}`, view, tr.side, true);
@@ -216,6 +324,11 @@ function renderGlobe() {
   }
 
   for (const [i, d] of world.detonations.entries()) {
+    const dkey = `${d.t}|${d.lat}|${d.lon}`;
+    if (!seenDetonations.has(dkey)) {
+      seenDetonations.add(dkey);
+      effects.explosion(Cesium.Cartesian3.fromRadians(d.lon, d.lat, Math.max(d.alt, 5)), d.big);
+    }
     const age = world.t - d.t;
     const e = upsert(`d${d.t}-${i}`, () => ({
       point: { pixelSize: 10, color: COLORS.amber, disableDepthTestDistance: Number.POSITIVE_INFINITY },
@@ -231,6 +344,9 @@ function renderGlobe() {
       entities.delete(key);
     }
   }
+  effects.tidy(smoking);
+  if (seenDetonations.size > 2000) seenDetonations.clear();
+  declutterLabels();
 
   const follow = document.getElementById("follow").checked ? entities.get(`o${selectedId}`) : undefined;
   if (viewer.trackedEntity !== follow) viewer.trackedEntity = follow;

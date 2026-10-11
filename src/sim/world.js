@@ -384,7 +384,11 @@ export class World {
   /** @param {string} [reason] how a platform was lost when no weapon caused it */
   destroy(o, by, reason) {
     if (o.kind === "missile") {
-      if (by && by.side !== o.side) this.log(by.side, `${by.label || by.db.name} intercepted ${o.db.name}`, "kill");
+      if (by && by.side !== o.side) {
+        this.log(by.side, `${by.label || by.db.name} intercepted ${o.db.name}`, "kill");
+        // the firing side loses the weapon's datalink / sees it vanish from its own picture
+        this.log(o.side, `${o.name} was shot down`, "miss");
+      }
       this.removeMissile(o, null);
       return;
     }
