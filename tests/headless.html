@@ -159,8 +159,8 @@ check("Damage table interpolates", Math.abs(damageFactor([[0, 0], [10, 1]], 5) -
       home: { lat_deg: 62, lon_deg: 0 }, mission: { type: "patrol", center: { lat_deg: 60, lon_deg: 0 }, radius_km: 15, alt_m: 6000 } },
   ] });
   for (let i = 0; i < 3000; i++) w.step(0.1);
-  const lost = w.events.some((e) => /shot down/.test(e.text));
-  check("SAMs shoot down a patrol aircraft overhead", lost, w.events.filter((e) => /shot down|engaging Il-38/.test(e.text)).map((e) => e.text).slice(0, 3).join(" | "));
+  const lost = w.events.some((e) => /has been shot down/.test(e.text));
+  check("SAMs shoot down a patrol aircraft overhead", lost, w.events.filter((e) => /has been shot down|engaging Il-38/.test(e.text)).map((e) => e.text).slice(0, 3).join(" | "));
 }
 
 // 6. Full scenario: blue attacks a Sovremenny with ship Harpoons and the Hornet strike together
@@ -189,7 +189,7 @@ check("Damage table interpolates", Math.abs(damageFactor([[0, 0], [10, 1]], 5) -
   check("Hornet strike reaches launch range and fires", count(/^Hornet 1 \d fired/) > 0, `${count(/^Hornet 1 \d fired/)} aircraft fired`);
   check("Tu-22M raid reaches launch range and fires", count(/^Backfire \d fired/) > 0, `${count(/^Backfire \d fired/)} aircraft fired`);
   const intercepts = count(/intercepted/);
-  lines.push(`INFO Scenario outcome: ${all.filter((o) => o.damage > 0).map(fmt).join("; ") || "no ship damaged"}; ${intercepts} missiles intercepted; ${count(/shot down/) / 2} aircraft shot down`);
+  lines.push(`INFO Scenario outcome: ${all.filter((o) => o.damage > 0).map(fmt).join("; ") || "no ship damaged"}; ${intercepts} missiles intercepted; ${count(/has been shot down/)} aircraft shot down`);
   check("SAM expenditure is reasonable (at most 4 per anti-ship missile)", samsFired <= 4 * asmFired, `${samsFired} SAMs vs ${asmFired} anti-ship missiles`);
   check("Surface contacts aren't re-announced every radar sweep", count(/New contact/) <= 8, `${count(/New contact/)} 'New contact' events`);
   results.events = w.events.map((e) => `${(e.t / 60).toFixed(1).padStart(5)}m [${e.side}] ${e.text}`);
