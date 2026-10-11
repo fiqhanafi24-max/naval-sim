@@ -83,6 +83,34 @@ function check(name, ok, detail = "") {
   check("Burke survives a single SS-N-22 most of the time", kills >= n * 0.5, `${kills}/${n} defended`);
 }
 
+// 3b. SS-N-22 against an undefended, moving destroyer, with a trace of the last 8 seconds
+{
+  let hits = 0, n = 10;
+  const outcomes = [];
+  let trace = [];
+  for (let s = 0; s < n; s++) {
+    const w = new World(data, atmo, { seed: 200 + s, ai: { blue: { autoDefend: false }, red: {} }, units: [
+      { side: "blue", class: "Arleigh Burke DDGHM", lat_deg: 60, lon_deg: 0, heading_deg: 90, speed_kts: 20 },
+      { side: "red", class: "Pr 956 Sarych", lat_deg: 60 + 70 / 111.2, lon_deg: 0, heading_deg: 90, speed_kts: 0 },
+    ] });
+    const [b, r] = w.ships();
+    w.updateTrack("red", b, "test", 2000);
+    const m = w.launch(r, r.launchers.findIndex((l) => l.item.includes("Moskit")), b.id).missile;
+    const rows = [];
+    for (let i = 0; i < 3000 && !m.dead; i++) {
+      w.step(0.1);
+      if (i % 5 === 0) {
+        rows.push(`t=${w.t.toFixed(1)} seg=${m.segment} seeker=${m.seekerMode} alt=${m.alt.toFixed(0)}m pitch=${(m.pitch / DEG).toFixed(0)}° goalAlt=${m.goalAlt === -9999 ? "intercept" : m.goalAlt.toFixed(0)} range=${(range3D_m(m, b) / 1000).toFixed(2)}km speed=${m.speed_mps.toFixed(0)}`);
+      }
+    }
+    if (b.damage > 0) hits++;
+    outcomes.push(w.events.filter((e) => e.side === "red").map((e) => e.text).slice(-1)[0] || "no event");
+    if (s === 0) trace = rows.slice(-16);
+  }
+  check("SS-N-22 hits an undefended destroyer most of the time", hits >= n * 0.6, `${hits}/${n} hit`);
+  lines.push("", "SS-N-22 outcomes: " + outcomes.join(" | "), "SS-N-22 trace (first run, last 8 s):", ...trace, "");
+}
+
 // 4. Damage tables
 check("Blast overpressure falls with range", blastOverpressure(10, 100) > blastOverpressure(50, 100));
 check("Damage table interpolates", Math.abs(damageFactor([[0, 0], [10, 1]], 5) - 0.5) < 1e-6);
@@ -104,6 +132,12 @@ check("Damage table interpolates", Math.abs(damageFactor([[0, 0], [10, 1]], 5) -
   const fmt = (o) => `${o.name} ${(o.damage * 100).toFixed(0)}%${o.dead ? " SUNK" : ""}`;
   const all = [...w.objects.values()].filter((o) => o.kind === "ship");
   check("Full scenario runs without errors", true, `t=${(w.t / 60).toFixed(1)} min, ${all.map(fmt).join("; ")}`);
+  const count = (re) => w.events.filter((e) => re.test(e.text)).length;
+  const asmFired = w.events.reduce((n, e) => n + Number((e.text.match(/fired (\d+) x/) || [0, 0])[1]), 0);
+  const samsFired = count(/engaging inbound missile/);
+  check("Both blue Harpoon salvos launch (no 'salvo stopped')", count(/salvo stopped/) === 0 && asmFired >= 8, `${asmFired} anti-ship missiles fired in total`);
+  check("SAM expenditure is reasonable (at most 4 per inbound missile)", samsFired <= 4 * asmFired, `${samsFired} SAMs vs ${asmFired} anti-ship missiles`);
+  check("No intel contact is re-announced every report", count(/New contact/) <= 8, `${count(/New contact/)} 'New contact' events`);
   results.events = w.events.map((e) => `${(e.t / 60).toFixed(1).padStart(5)}m [${e.side}] ${e.text}`);
   lines.push("", "Event log:", ...results.events);
 }

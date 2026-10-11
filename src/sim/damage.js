@@ -74,7 +74,8 @@ export function calculateDamage(weapon, target, goodDetonation, world) {
   if (weapon.directHitTargetId != null || !goodDetonation) return dmg;
   if (target.alt < -3) return dmg; // surface blast does not reach submerged targets
 
-  let range_m = range3D_m(weapon, target);
+  // use the fuzed miss distance for the target the weapon homed on
+  let range_m = weapon.burst?.targetId === target.id ? weapon.burst.range_m : range3D_m(weapon, target);
   const span = targetSpan_m(target);
   const minRange_m = Math.max(Math.min(0.05 * span, 50), 5);
   range_m = Math.max(range_m, minRange_m);
@@ -93,19 +94,23 @@ export function calculateDamage(weapon, target, goodDetonation, world) {
 }
 
 /**
- * Apply damage to a platform (tcPlatformObject::ApplyAdvancedDamage).
+ * Apply damage to a platform (tcPlatformObject::ApplyAdvancedDamage) or a weapon
+ * (tcWeaponObject::ApplyAdvancedDamage, which scales fragment hits and randomness differently).
  * @returns {{newDamage: number, code: string}} code letters: K kinetic, X internal, B blast, T thermal, F frag
  */
 export function applyDamage(target, dmg, world) {
   if (target.damage >= 1) return { newDamage: 0, code: "" };
   const eff = world.data.damageEffects[target.db.damageEffect];
   if (!eff) return { newDamage: 0, code: "" };
+  const isWeapon = target.kind === "missile";
 
   const impact = damageFactor(eff.frag, dmg.kinetic_J);
-  const internal = dmg.isPenetration && impact > 0.002 ? damageFactor(eff.internal, dmg.explosive_kg) : 0;
+  const internalThreshold = isWeapon ? 0.02 : 0.002;
+  const internal = dmg.isPenetration && impact > internalThreshold ? damageFactor(eff.internal, dmg.explosive_kg) : 0;
   const blast = damageFactor(eff.blast, dmg.blast_psi);
   const thermal = damageFactor(eff.rad, dmg.thermal_J_cm2);
-  const frag = dmg.fragHits > 0 ? (1 + Math.log10(dmg.fragHits)) * damageFactor(eff.frag, dmg.fragEnergy_J) : 0;
+  const hitsFactor = isWeapon ? Math.sqrt(dmg.fragHits) : 1 + Math.log10(Math.max(dmg.fragHits, 1));
+  const frag = dmg.fragHits > 0 ? hitsFactor * damageFactor(eff.frag, dmg.fragEnergy_J) : 0;
 
   const total = impact + internal + blast + thermal + frag;
   if (total <= 0) return { newDamage: 0, code: "" };
@@ -117,8 +122,8 @@ export function applyDamage(target, dmg, world) {
   if (thermal > 0) code += "T";
   if (frag > 0) code += "F";
 
-  // median about 0.5, minimum 0.05 (same random factor as GCB2)
-  const r = 0.642 * Math.abs(world.rng.gaussian()) + 0.05;
+  // platforms: median about 0.5, minimum 0.05; weapons: uniform 70-130% (both as in GCB2)
+  const r = isWeapon ? 0.7 + 0.6 * world.rng.next() : 0.642 * Math.abs(world.rng.gaussian()) + 0.05;
   const newDamage = Math.min(r * total, 1 - target.damage);
   target.damage = Math.min(target.damage + r * total, 1);
   return { newDamage, code };

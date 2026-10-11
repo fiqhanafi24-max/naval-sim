@@ -13,6 +13,18 @@ const STALE_S = { ship: 120, missile: 10 };
 const AI_INTERVAL_S = 1;
 const MAX_SAMS_PER_THREAT = 2;
 
+// targetFlags bits from GCB2 tcWeaponDBObject.h
+const SURFACE_TARGET = 0x1, AIR_TARGET = 0x2, MISSILE_TARGET = 0x8;
+
+/** Dedicated anti-ship missile (dual-role SAMs like ESSM can hit ships but are kept for air defence). */
+export function isAntiShip(db) {
+  return (db.targetFlags & SURFACE_TARGET) !== 0 && (db.targetFlags & (AIR_TARGET | MISSILE_TARGET)) === 0;
+}
+
+export function isAntiAir(db) {
+  return (db.targetFlags & (AIR_TARGET | MISSILE_TARGET)) !== 0;
+}
+
 export class World {
   /**
    * @param {object} data exported GCB2 units (data/gcb-units.json)
@@ -134,16 +146,24 @@ export class World {
     }
     // a sensor track is better than an intel report; don't overwrite a fresh one with intel
     if (existing && error_m > 0 && existing.error_m === 0 && this.t - existing.t < 30) return;
+    // intel tracks last until the next report is due; sensor tracks go stale quickly
+    const intel = this.intel[side];
+    const life_s = error_m > 0 && intel ? intel.interval_s * 1.2 : STALE_S[o.kind];
     const track = {
       id: o.id, kind: o.kind, className: o.db.name, side: o.side,
       lat: pos.lat, lon: pos.lon, alt: o.alt, heading: o.heading, pitch: o.pitch || 0,
-      speed_kts: o.speed_kts, t: this.t, source, error_m,
+      speed_kts: o.speed_kts, t: this.t, expires: this.t + life_s, source, error_m,
       firstSeen: existing ? existing.firstSeen : this.t,
     };
     tracks.set(o.id, track);
-    if (!existing) {
-      if (o.kind === "missile") this.log(side, `Inbound missile detected (${source})`, "threat");
-      else this.log(side, `New contact: ${o.db.name} (${source})`, "contact");
+    if (o.kind === "missile") {
+      track.announced = existing?.announced || false;
+      if (!track.announced && this.threatens(side, track)) {
+        track.announced = true;
+        this.log(side, `Inbound missile detected (${source})`, "threat");
+      }
+    } else if (!existing) {
+      this.log(side, `New contact: ${o.db.name} (${source})`, "contact");
     }
   }
 
@@ -162,7 +182,7 @@ export class World {
     for (const side of SIDES) {
       for (const [id, tr] of this.tracks[side]) {
         const o = this.get(id);
-        if (!o || o.dead || t - tr.t > STALE_S[tr.kind]) this.tracks[side].delete(id);
+        if (!o || o.dead || t > tr.expires) this.tracks[side].delete(id);
       }
     }
   }
@@ -210,14 +230,14 @@ export class World {
     this.objects.delete(m.id);
     if (m.fcRadar) m.fcRadar.releaseTrack(m.intendedTarget);
     for (const side of SIDES) this.tracks[side].delete(m.id);
-    if (reason && m.db.targetFlags & 1) this.log(m.side, `${m.name} ${reason}`, "miss");
+    if (reason) this.log(m.side, `${m.name} ${reason}`, "miss");
   }
 
   detonate(m, directTarget) {
     const wh = this.data.warheads[m.db.damageModel];
     const good = this.rng.next() <= (wh ? wh.probDetonate : 1);
     m.directHitTargetId = directTarget ? directTarget.id : null;
-    this.detonations.push({ t: this.t, lat: m.lat, lon: m.lon, alt: m.alt, big: m.db.targetFlags & 1 });
+    this.detonations.push({ t: this.t, lat: m.lat, lon: m.lon, alt: m.alt, big: isAntiShip(m.db) });
 
     const radius_m = Math.max(wh ? wh.maxRange_m : 0, 50);
     for (const o of [...this.objects.values()]) {
@@ -228,11 +248,13 @@ export class World {
       if (o.kind === "ship") {
         this.log(m.side, `${m.name} hit ${o.name}: +${Math.round(res.newDamage * 100)}% damage (${res.code})`, "hit");
         this.log(o.side, `${o.name} hit by ${m.db.name}: ${Math.round(o.damage * 100)}% damaged`, "damage");
+      } else if (o.damage < 1 && o.side !== m.side) {
+        this.log(m.side, `${m.name} damaged ${o.db.name} (${Math.round(o.damage * 100)}%) but it is still flying`, "miss");
       }
       if (o.damage >= 1) this.destroy(o, m);
     }
     this.removeMissile(m, null);
-    if (!good && m.db.targetFlags & 1) this.log(m.side, `${m.name} warhead failed to detonate`, "miss");
+    if (!good) this.log(m.side, `${m.name} warhead failed to detonate`, "miss");
   }
 
   destroy(o, by) {
@@ -249,13 +271,24 @@ export class World {
     if (by) this.log(by.side, `${o.name} sunk`, "kill");
   }
 
+  /** Launcher indices holding anti-ship missiles that can reach range_km. */
+  antiShipLaunchers(ship, range_km = 0) {
+    return ship.launchers
+      .map((l, i) => i)
+      .filter((i) => {
+        const L = ship.launchers[i];
+        const db = this.data.missiles[L.item];
+        return isAntiShip(db) && L.count > 0 && db.maxRange_km >= range_km;
+      });
+  }
+
   /** Queue a salvo of anti-ship missiles from one ship at a track. */
   orderSalvo(ship, targetId, count) {
-    const idxs = ship.launchers
-      .map((l, i) => i)
-      .filter((i) => this.data.missiles[ship.launchers[i].item].targetFlags & 1);
-    if (!idxs.length) return { ok: false, reason: "no anti-ship missiles" };
-    if (!this.getTrack(ship.side, targetId)) return { ok: false, reason: "no track" };
+    const track = this.getTrack(ship.side, targetId);
+    if (!track) return { ok: false, reason: "no track" };
+    if (!this.antiShipLaunchers(ship).length) return { ok: false, reason: "no anti-ship missiles left" };
+    const idxs = this.antiShipLaunchers(ship, groundRange_m(ship, predict(track, this.t)) / 1000);
+    if (!idxs.length) return { ok: false, reason: "target out of range" };
     this.salvos.push({ shipId: ship.id, targetId, remaining: count, launchers: idxs, fired: 0 });
     this.lastSalvoAt.set(`${ship.side}:${targetId}`, this.t);
     return { ok: true };
@@ -296,19 +329,22 @@ export class World {
     if (cfg.weaponsFree) this.offense(side, cfg.salvo || 4);
   }
 
+  /** Is a missile (position + heading) flying toward one of this side's ships? */
+  threatens(side, m) {
+    return this.ships(side).some(
+      (s) => Math.abs(wrapPi(bearing(m, s) - m.heading)) < 30 * DEG && groundRange_m(m, s) < 150000,
+    );
+  }
+
   /** Engage inbound missile tracks with SAMs, up to two in the air per threat. */
   airDefense(side) {
     const own = this.ships(side);
     if (!own.length) return;
-    const sams = this.missiles().filter((m) => m.side === side && !(m.db.targetFlags & 1));
+    const sams = this.missiles().filter((m) => m.side === side && isAntiAir(m.db));
     for (const tr of this.tracks[side].values()) {
       if (tr.kind !== "missile") continue;
       const threat = predict(tr, this.t);
-      const defended = own.find((s) => {
-        const brg = bearing(threat, s);
-        return Math.abs(wrapPi(brg - tr.heading)) < 30 * DEG && groundRange_m(threat, s) < 150000;
-      });
-      if (!defended) continue;
+      if (!this.threatens(side, threat)) continue;
       let inFlight = sams.filter((m) => m.intendedTarget === tr.id).length;
       const shooters = [...own].sort((a, b) => groundRange_m(a, threat) - groundRange_m(b, threat));
       for (const ship of shooters) {
@@ -317,7 +353,7 @@ export class World {
           .map((l, i) => i)
           .filter((i) => {
             const db = this.data.missiles[ship.launchers[i].item];
-            return !(db.targetFlags & 1) && ship.launchers[i].count > 0;
+            return isAntiAir(db) && ship.launchers[i].count > 0;
           })
           // longest-ranged weapon that can reach first
           .sort((a, b) => this.data.missiles[ship.launchers[b].item].maxRange_km - this.data.missiles[ship.launchers[a].item].maxRange_km);
@@ -344,10 +380,8 @@ export class World {
       if (this.t - (this.lastSalvoAt.get(key) ?? -1e9) < 600) continue;
       for (const ship of this.ships(side)) {
         if (busy.has(ship.id)) continue;
-        const asm = ship.launchers.find((l) => l.count > 0 && this.data.missiles[l.item].targetFlags & 1);
-        if (!asm) continue;
         const range_km = groundRange_m(ship, predict(tr, this.t)) / 1000;
-        if (range_km > 0.9 * this.data.missiles[asm.item].maxRange_km) continue;
+        if (!this.antiShipLaunchers(ship, range_km / 0.9).length) continue;
         this.orderSalvo(ship, tr.id, salvoSize);
         busy.add(ship.id);
         break;

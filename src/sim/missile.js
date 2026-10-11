@@ -2,11 +2,12 @@
 // UpdateGoalPitch, UpdateDetonation) and Aero::UpdateMissileKState (src/sim/tcAero.cpp).
 //
 // Differences from GCB2, kept deliberately small:
-//  - flight-profile goal altitudes are clamped to >= 5 m (some database profiles use negative
-//    AGL values that fly the missile into the sea in a pure port);
 //  - a seeker that has not yet acquired steers on the launching side's track of its target
 //    (stands in for GCB2's SEEKERACQUIRE / command-handoff logic);
-//  - collision with a ship uses its length/beam/height box instead of the 3D model mesh.
+//  - collision with a ship uses its length/beam/height box instead of the 3D model mesh;
+//  - command-only missiles switch to intercept pitch in the last 15 s (otherwise ESSM's
+//    12,000 m altitude hold flies it over sea-skimmers until the motor burns out);
+//  - a tracking seeker coasts on its last track for up to 3 s when it briefly loses the target.
 
 import { Radar } from "./radar.js";
 import {
@@ -17,7 +18,8 @@ import {
 const GM_COMMAND = 0, GM_NAV = 1, GM_SENSOR = 2;
 const AM_ASL = 0, AM_AGL = 1, AM_INTERCEPT = 2, AM_DATUM = 3, AM_INTERCEPT_HIGH = 4, AM_ASL_LOFT = 5;
 const IGNORE_ALT = -9999;
-const MIN_GOAL_ALT_M = 5;
+const TERMINAL_COMMAND_S = 15;
+const SEEKER_COAST_S = 3;
 
 let missileCounter = 0;
 
@@ -184,12 +186,15 @@ export class Missile {
 
   /** Steer toward a predicted track position; returns intercept pitch. */
   steerToward(predicted, useLead) {
-    const ic = interceptData3D(this, predicted);
-    this.goalHeading = useLead && this.flightTime >= 5 ? ic.heading : bearing(this, predicted);
-    this.rangeToObjective_km = groundRange_m(this, predicted) / 1000;
+    // aim at the hull, not the waterline (GCB2 collides with the 3D model, which sits above alt 0)
+    const ship = predicted.kind === "ship" ? this.world.data.ships[predicted.className] : null;
+    const aim = ship ? { ...predicted, alt: predicted.alt + ship.effectiveHeight_m } : predicted;
+    const ic = interceptData3D(this, aim);
+    this.goalHeading = useLead && this.flightTime >= 5 ? ic.heading : bearing(this, aim);
+    this.rangeToObjective_km = groundRange_m(this, aim) / 1000;
     this.interceptTime = ic.tti_s;
     this.waypoint = { lat: predicted.lat, lon: predicted.lon, alt: predicted.alt };
-    return ic.pitch;
+    return this.alt <= 4 && ic.pitch < 0 ? 0 : ic.pitch;
   }
 
   /** Port of UpdateGuidance. */
@@ -218,8 +223,10 @@ export class Missile {
         const track = world.getTrack(this.side, this.intendedTarget);
         if (track) {
           interceptPitch = this.steerToward(predict(track, t), true);
+          // command-only missiles (e.g. ESSM) fly the terminal phase on intercept pitch
+          const terminal = this.segment === this.profile.length - 1 && this.interceptTime < TERMINAL_COMMAND_S;
           useInterceptPitch =
-            seg.altMode === AM_INTERCEPT || (seg.altMode === AM_INTERCEPT_HIGH && interceptPitch > 0);
+            terminal || seg.altMode === AM_INTERCEPT || (seg.altMode === AM_INTERCEPT_HIGH && interceptPitch > 0);
         } else if (this.interceptTime < 9990) {
           this.goalHeading = bearing(this, this.waypoint);
           this.rangeToObjective_km = groundRange_m(this, this.waypoint) / 1000;
@@ -280,7 +287,9 @@ export class Missile {
       case AM_ASL:
       case AM_ASL_LOFT:
       case AM_AGL: // all-ocean map: AGL == ASL
-        this.goalAlt = Math.max(seg.alt_m, MIN_GOAL_ALT_M);
+        // negative values are intentional: with the soft altitude hold they force steeper
+        // dives in weave profiles (e.g. SS-N-22), and the next segment pulls the missile up
+        this.goalAlt = seg.alt_m;
         break;
       case AM_DATUM:
         useInterceptPitch = true;
@@ -309,6 +318,7 @@ export class Missile {
 
   snapshot(target, t) {
     return {
+      kind: target.kind, className: target.db.name,
       lat: target.lat, lon: target.lon, alt: target.alt, heading: target.heading,
       pitch: target.pitch || 0, speed_kts: target.speed_kts, t,
     };
@@ -330,6 +340,9 @@ export class Missile {
         this.seekerSnap = this.snapshot(target, t);
         return;
       }
+      // coast on the last track through brief dropouts (e.g. pitch manoeuvres taking the
+      // target outside the seeker cone) instead of dropping straight back to search
+      if (this.seekerMode === "track" && target && !target.dead && t - this.seekerSnap.t < SEEKER_COAST_S) return;
       if (this.seekerMode === "track") {
         this.seekerMode = "search";
         this.seekerSnap = null;
@@ -382,22 +395,27 @@ export class Missile {
 
     const detR = this.db.detonationRange_m;
     const cpa = closestApproach(this, target);
-    const inWindow = cpa.t >= 0 && cpa.t <= dt;
+    // closest approach anywhere in the step just flown or the next one
+    const inWindow = cpa.t >= -dt && cpa.t <= dt;
+    // GCB2 delays detonation to the closest-approach point (Detonate(dt)); we record the miss
+    // distance there so damage uses it instead of the missile's position at this time step
+    const burst = (range_m, direct) => {
+      this.burst = { targetId: target.id, range_m };
+      return this.world.detonate(this, direct ? target : null);
+    };
 
     // direct-hit test against the target's box
     if (target.kind === "ship") {
-      const rel = cpa.t >= 0 && cpa.t <= dt ? { x: -cpa.dx, y: -cpa.dy, z: -cpa.dz } : negate(enu(this, target));
-      if (insideShip(rel, target)) {
-        if (detR > 0) return this.world.detonate(this, null);
-        return this.world.detonate(this, target);
-      }
+      const rel = inWindow ? { x: -cpa.dx, y: -cpa.dy, z: -cpa.dz } : negate(enu(this, target));
+      if (insideShip(rel, target)) return burst(0, detR === 0);
     } else if (inWindow && cpa.miss_m <= 2) {
-      return this.world.detonate(this, detR > 0 ? null : target);
+      return burst(cpa.miss_m, detR === 0);
     }
     if (detR === 0) return;
 
-    if (range3D_m(this, target) <= detR) return this.world.detonate(this, null);
-    if (inWindow && cpa.miss_m <= detR) return this.world.detonate(this, null);
+    const range_m = range3D_m(this, target);
+    if (range_m <= detR) return burst(range_m, false);
+    if (inWindow && cpa.miss_m <= detR) return burst(cpa.miss_m, false);
   }
 }
 

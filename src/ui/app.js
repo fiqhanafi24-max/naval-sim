@@ -1,7 +1,7 @@
 // Browser front end: CesiumJS globe + DOM panels around the headless World.
 /* global Cesium */
 
-import { World } from "../sim/world.js";
+import { World, isAntiShip } from "../sim/world.js";
 import { predict } from "../sim/missile.js";
 import { DEG, bearing, groundRange_m } from "../sim/geo.js";
 
@@ -173,7 +173,7 @@ function renderGlobe() {
   if (sel && !sel.dead) {
     const rings = sel.radars.filter((r) => r.active).map((r) => r.nominalRange_km(40, 10));
     if (rings.length) ring("radar", sel, 1000 * Math.max(...rings), COLORS.blue.withAlpha(0.6), false);
-    const asm = sel.launchers.filter((l) => l.count > 0 && data.missiles[l.item].targetFlags & 1);
+    const asm = sel.launchers.filter((l) => l.count > 0 && isAntiShip(data.missiles[l.item]));
     if (asm.length) ring("asm", sel, 1000 * Math.max(...asm.map((l) => data.missiles[l.item].maxRange_km)), COLORS.amber.withAlpha(0.5), true);
   }
 
@@ -241,7 +241,7 @@ function renderPanels(force = false) {
   const key = [o.id, o.dead, contacts.map((c) => c.id).join(","), Object.values(o.inventory()).join(",")].join("|");
   if (force || key !== detailKey) {
     detailKey = key;
-    const asm = o.launchers.filter((l) => data.missiles[l.item].targetFlags & 1);
+    const asm = o.launchers.filter((l) => l.count > 0 && isAntiShip(data.missiles[l.item]));
     $("detail").innerHTML = `
       <h3>${o.name}</h3>
       <div class="sub">${o.db.name} · ${o.db.country}</div>
