@@ -363,6 +363,7 @@ function renderInspector() {
   $("inspector").innerHTML = `
     <h2>${it.type === "ship" ? "Ship" : it.type === "patrol" ? "Patrol flight" : "Strike package"} <span class="side-${it.side}">(${it.side})</span></h2>
     <h3>${escapeHtml(r.class)}</h3>
+    ${db?.note ? `<div class="sub">${escapeHtml(db.note)}</div>` : ""}
     <div class="sub">${escapeHtml(db?.country || "")}${db?.year ? ` · setup ${db.year}` : ""} · ${it.type === "patrol"
       ? escapeHtml(db?.sensors.map((s) => s.name).join(", ") || "no radar") : escapeHtml(db ? weaponsSummary(db) : "")}</div>
     ${body}

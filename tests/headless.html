@@ -226,6 +226,20 @@ check("Damage table interpolates", Math.abs(damageFactor([[0, 0], [10, 1]], 5) -
     `${Object.keys(data.ships).length} ships, ${Object.keys(data.aircraft).length} aircraft${failures.length ? "; failures: " + failures.slice(0, 8).join(" | ") : ""}`);
 }
 
+// 6c. Brunei: Darussalam OPV fires its Exocet MM40 Block 3 at a ship 80 km away
+{
+  const w = new World(data, atmo, { seed: 11, ai: { red: { autoDefend: false, guns: false } }, units: [
+    { side: "blue", class: "Darussalam OPV", name: "KDB Darussalam", lat_deg: 5.0, lon_deg: 114.0, heading_deg: 0, speed_kts: 12 },
+    { side: "red", class: "Pr 956 Sarych", lat_deg: 5.0 + 80 / 111.2, lon_deg: 114.0, heading_deg: 90, speed_kts: 0 },
+  ] });
+  const [b, r] = w.ships();
+  w.updateTrack("blue", r, "test");
+  w.orderSalvo(b, r.id, 4);
+  for (let i = 0; i < 6000; i++) w.step(0.1);
+  const fired = w.events.filter((e) => /fired \d+ x MM-40 B3/.test(e.text)).map((e) => e.text);
+  check("Brunei: Darussalam OPV fires Exocet MM40 Block 3", fired.length > 0, `${fired.join("; ") || "no launch"}; target damage ${(r.damage * 100).toFixed(0)}%`);
+}
+
 // 7. Historical scenarios: run each to its time limit with a simple blue plan
 for (const id of ["falklands-1982", "sidra-1986"]) {
   const sc = await fetch(`../scenarios/${id}.json`).then((r) => r.json());
