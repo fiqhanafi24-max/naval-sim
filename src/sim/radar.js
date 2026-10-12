@@ -30,6 +30,7 @@ export class Radar {
     this.illuminator = null; // fire-control radar feeding a semi-active seeker
     this.fcTargets = new Map(); // targetId -> count of weapons this radar is guiding
     this.lastMargin_dB = -99;
+    this.kind = "radar";
   }
 
   get isWeapon() {

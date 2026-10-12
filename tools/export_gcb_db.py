@@ -126,6 +126,7 @@ def export_radar(db, name):
         "detectsAir": bool(int(num(r["DetectsAir"]))),
         "detectsMissile": bool(int(num(r["DetectsMissile"]))),
         "detectsGround": bool(int(num(r["DetectsGround"]))),
+        "idThreshold_dB": num(r["IdThreshold_dB"], 99),
     }
 
 
@@ -153,6 +154,9 @@ def export_optical(db, name):
         "detectsAir": bool(int(num(o["DetectsAir"]))),
         "detectsMissile": bool(int(num(o["DetectsMissile"]))),
         "nightFactor": num(o["NightFactor"], 1),
+        "idThreshold_dB": num(o["IdThreshold_dB"], 99),
+        "rangeError": num(o["RangeError"]),
+        "angleError_deg": num(o["AngleError_deg"]),
     }
 
 
@@ -312,7 +316,7 @@ def export_launcher(db, data, sensors, pl, item, keep=None):
     if fc is None and kind == "missile" and data["missiles"][item[0]]["needsFireControl"]:
         # fall back to the first fire-control radar on the platform
         fc = next((x["name"] for x in sensors
-                   if data["radars"][x["name"]]["maxFireControlTracks"] > 0), None)
+                   if x["type"] == "radar" and data["radars"][x["name"]]["maxFireControlTracks"] > 0), None)
     # time between shots: single-round launchers (Mk-13, VLS cells) reload from the
     # magazine before every shot; multi-round launchers just cycle
     lc = one(db, "select * from launcher_configuration where DatabaseClass=? and ChildClass=?",
@@ -346,7 +350,13 @@ def export_fit(db, cls, loadout, data, keep=None):
         rad = export_radar(db, ps["SensorClass"])
         if rad:
             data["radars"][rad["name"]] = rad
-            sensors.append({"name": rad["name"], "mountAz_deg": num(ps["SensorAz"])})
+            sensors.append({"name": rad["name"], "type": "radar", "mountAz_deg": num(ps["SensorAz"])})
+            continue
+        # visual lookouts and other non-IR search optics: they identify contacts
+        opt = export_optical(db, ps["SensorClass"])
+        if opt and opt["isSurveillance"] and not opt["isIR"]:
+            data["opticals"][opt["name"]] = opt
+            sensors.append({"name": opt["name"], "type": "optical", "mountAz_deg": num(ps["SensorAz"])})
 
     launchers = []
     for pl in rows(db, "select * from platform_launcher where DatabaseClass=? order by LauncherId", cls):
@@ -466,7 +476,11 @@ def export_custom_ship(db, data, cls, spec):
         if not rad:
             raise ValueError("%s: unknown GCB2 radar %r" % (cls, name))
         data["radars"][name] = rad
-        sensors.append({"name": name, "mountAz_deg": 0})
+        sensors.append({"name": name, "type": "radar", "mountAz_deg": 0})
+    # standard bridge lookouts, as GCB2 ships carry
+    for name in ("Eyeball 20/20", "Eyeball 20/20b", "Eyeball 20/20c", "Eyeball 20/20d"):
+        data["opticals"][name] = export_optical(db, name)
+        sensors.append({"name": name, "type": "optical", "mountAz_deg": 0})
     launchers = []
     for i, (lclass, item, count, arc, az, fc, desc) in enumerate(spec["launchers"]):
         pl = {"LauncherId": i, "LauncherClass": lclass, "Description": desc, "FiringArc_deg": arc,

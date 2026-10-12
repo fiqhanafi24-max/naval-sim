@@ -1,28 +1,93 @@
 {
   "name": "Gulf of Sidra, 24 March 1986",
   "description": "USS Yorktown and USS Caron are operating south of the 'Line of Death'. Libyan Nanuchka missile corvettes are leaving Benghazi with SS-N-2C Styx missiles, guided by coastal radar. You have E-2C Hawkeye reports and A-6E Intruders from the carrier with Harpoons. Sink the corvettes before they get within Styx range.",
+  "startTime": "1986-03-24T17:00:00Z",
   "seed": 1986,
   "endAt_s": 5400,
-  "camera": { "lat_deg": 32.0, "lon_deg": 19.0, "alt_m": 150000, "pitch_deg": -45 },
+  "camera": {
+    "lat_deg": 32.0,
+    "lon_deg": 19.0,
+    "alt_m": 150000,
+    "pitch_deg": -45
+  },
   "units": [
-    { "side": "blue", "class": "Ticonderoga CG Baseline 1", "name": "USS Yorktown", "lat_deg": 32.90, "lon_deg": 18.40, "heading_deg": 135, "speed_kts": 20 },
-    { "side": "blue", "class": "Spruance DDG", "name": "USS Caron", "lat_deg": 32.98, "lon_deg": 18.25, "heading_deg": 135, "speed_kts": 20 },
-    { "side": "red", "class": "Pr 1234E Ovod-E (Libya)", "name": "Ean Zara", "lat_deg": 32.25, "lon_deg": 19.85, "heading_deg": 300, "speed_kts": 30 },
-    { "side": "red", "class": "Pr 1234E Ovod-E (Libya)", "name": "Ean Mara", "lat_deg": 32.18, "lon_deg": 19.95, "heading_deg": 300, "speed_kts": 30 }
+    {
+      "side": "blue",
+      "class": "Ticonderoga CG Baseline 1",
+      "name": "USS Yorktown",
+      "lat_deg": 32.9,
+      "lon_deg": 18.4,
+      "heading_deg": 135,
+      "speed_kts": 20
+    },
+    {
+      "side": "blue",
+      "class": "Spruance DDG",
+      "name": "USS Caron",
+      "lat_deg": 32.98,
+      "lon_deg": 18.25,
+      "heading_deg": 135,
+      "speed_kts": 20
+    },
+    {
+      "side": "red",
+      "class": "Pr 1234E Ovod-E (Libya)",
+      "name": "Ean Zara",
+      "lat_deg": 32.25,
+      "lon_deg": 19.85,
+      "heading_deg": 300,
+      "speed_kts": 30
+    },
+    {
+      "side": "red",
+      "class": "Pr 1234E Ovod-E (Libya)",
+      "name": "Ean Mara",
+      "lat_deg": 32.18,
+      "lon_deg": 19.95,
+      "heading_deg": 300,
+      "speed_kts": 30
+    }
   ],
   "intel": {
-    "blue": { "source": "E-2C report", "interval_s": 120, "error_m": 1500, "firstAt_s": 10 },
-    "red": { "source": "coastal radar", "interval_s": 120, "error_m": 2000, "firstAt_s": 60 }
+    "blue": {
+      "source": "E-2C report",
+      "interval_s": 120,
+      "error_m": 1500,
+      "firstAt_s": 10
+    },
+    "red": {
+      "source": "coastal radar",
+      "interval_s": 120,
+      "error_m": 2000,
+      "firstAt_s": 60
+    }
   },
   "strikes": {
     "blue": [
-      { "callsign": "Intruder", "class": "A-6E", "count": 2, "available": 2, "alt_m": 150, "launchFraction": 0.6,
-        "from": { "lat_deg": 33.6, "lon_deg": 18.6 } }
+      {
+        "callsign": "Intruder",
+        "class": "A-6E",
+        "count": 2,
+        "available": 2,
+        "alt_m": 150,
+        "launchFraction": 0.6,
+        "from": {
+          "lat_deg": 33.6,
+          "lon_deg": 18.6
+        }
+      }
     ],
     "red": []
   },
   "ai": {
-    "blue": { "autoDefend": true, "weaponsFree": false },
-    "red": { "autoDefend": true, "weaponsFree": true, "salvo": 4 }
+    "blue": {
+      "autoDefend": true,
+      "weaponsFree": false
+    },
+    "red": {
+      "autoDefend": true,
+      "weaponsFree": true,
+      "salvo": 4
+    }
   }
 }

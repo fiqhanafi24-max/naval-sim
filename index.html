@@ -14,29 +14,42 @@
 
 <div id="topbar" class="panel">
   <h1 id="title">Open Naval Sim</h1>
-  <div id="clock">00:00:00</div>
-  <div class="seg" id="speed">
-    <button data-s="0">Pause</button>
-    <button data-s="1">1×</button>
-    <button data-s="5">5×</button>
-    <button data-s="20" class="on">20×</button>
-    <button data-s="60">60×</button>
+  <div class="toolbar">
+    <button id="tPlot" title="Plot course for the selected ship (P)">Plot Course</button>
+    <button id="tRings" class="on" title="Sensor and weapon range rings (R)">Range Rings</button>
+    <button id="tLosses" title="Losses and expenditures (L)">Losses &amp; Expenditures</button>
+    <button id="tLog" class="on" title="Message log (M)">Message Log</button>
   </div>
   <div class="spacer"></div>
   <label class="toggle"><input type="checkbox" id="follow"> Follow selected</label>
-  <label class="toggle"><input type="checkbox" id="truth"> Show all units (umpire view)</label>
+  <label class="toggle"><input type="checkbox" id="truth"> Umpire view</label>
 </div>
 
-<div id="units" class="panel"><h2>Blue force</h2><div id="unitList"></div></div>
-<div id="detail" class="panel"><div class="muted">Select a ship.</div></div>
-<div id="log" class="panel"></div>
-<div id="legend" class="panel">
-  <span style="color:var(--blue)">■</span> own ships &nbsp;
-  <span style="color:var(--red)">◆</span> hostile contact &nbsp;
-  <span style="color:var(--amber)">○</span> report position (uncertain) &nbsp;
-  <span style="color:var(--blue)">◯</span> radar coverage vs ships
+<div id="infobar" class="panel">
+  <span id="timeLine"></span>
+  <div class="seg" id="speed" title="Time compression (Space pauses, 1-6 set speed)">
+    <button data-s="0">Pause</button>
+    <button data-s="1">1×</button>
+    <button data-s="5">5×</button>
+    <button data-s="15" class="on">15×</button>
+    <button data-s="30">30×</button>
+    <button data-s="60">60×</button>
+    <button data-s="120">120×</button>
+  </div>
 </div>
+
+<div id="units" class="panel"><h2>Order of battle</h2><div id="unitList"></div></div>
+<div id="status" class="panel"></div>
+<div id="msglog" class="panel"><h2>Message log</h2><div id="msgGroups"></div></div>
+<div id="hint" class="panel"></div>
 <div id="banner" class="panel"></div>
+
+<div id="modal" hidden>
+  <div class="card panel">
+    <div class="modal-head"><h3 id="modalTitle"></h3><button id="modalClose" aria-label="Close">✕</button></div>
+    <div id="modalBody"></div>
+  </div>
+</div>
 
 <div id="brief">
   <div class="card panel">
@@ -45,10 +58,10 @@
     <h3 id="briefTitle"></h3>
     <p id="briefText"></p>
     <ul>
-      <li>Your ships defend themselves against missiles automatically.</li>
-      <li>Select a ship, then pick a hostile contact and fire anti-ship missiles at it.</li>
-      <li>Contacts from patrol aircraft reports are approximate. Missiles fly to the reported position, then their seekers search for the target.</li>
-      <li>Drag to pan, right-drag or scroll to zoom, ctrl-drag (or middle-drag) to tilt.</li>
+      <li>Select one of your units on the map or in the order of battle; its status, throttle, EMCON and weapons are on the right.</li>
+      <li>Click a hostile contact to make it the target, then engage. New contacts are unidentified (SKUNK, BOGEY, VAMPIRE) until lookouts or reports identify them.</li>
+      <li>Plot Course (P): click waypoints on the map; right-click or Esc to finish.</li>
+      <li>Keys: Space pause, 1-6 time compression, R range rings, L losses, M message log.</li>
     </ul>
     <div class="brief-actions">
       <button id="start" class="on">Start</button>

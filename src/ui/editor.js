@@ -15,6 +15,7 @@ function blankScenario() {
   return {
     name: "New scenario",
     description: "",
+    startTime: new Date().toISOString().slice(0, 14) + "00:00Z",
     seed: Math.floor(Math.random() * 100000),
     endAt_s: 7200,
     camera: { lat_deg: 30, lon_deg: 0, alt_m: 3000000, pitch_deg: -70 },
@@ -402,6 +403,7 @@ function renderSettings() {
   $("inspector").innerHTML = `
     <h2>Scenario settings</h2>
     <label class="field">Briefing<textarea id="sDesc" placeholder="What's the situation? What should the player do?"></textarea></label>
+    <label class="field">Start date and time (Zulu)<input id="sStart" type="datetime-local"></label>
     <div class="two">
       <label class="field">Time limit (min, 0 = none)<input id="sEnd" type="number" min="0"></label>
       <label class="field">Random seed<input id="sSeed" type="number"></label>
@@ -425,6 +427,7 @@ function renderSettings() {
     <div class="field">Fly the globe to where the action should start, then
       <button id="sCamera">Use current view as start view</button></div>`;
   bind("sDesc", () => scenario.description, (v) => (scenario.description = v));
+  bind("sStart", () => (scenario.startTime || "").slice(0, 16), (v) => (scenario.startTime = v ? `${v}:00Z` : undefined));
   bind("sEnd", () => Math.round((scenario.endAt_s || 0) / 60), (v) => (scenario.endAt_s = 60 * v || undefined), num);
   bind("sSeed", () => scenario.seed, (v) => (scenario.seed = v), num);
   for (const s of ["blue", "red"]) {

@@ -3,7 +3,7 @@
 // Not ported: day/night (always daylight), laser designation, sea state.
 
 import { DEG, bearing, range3D_m, wrapPi } from "./geo.js";
-import { randomDetect, signatureModifier } from "./radar.js";
+import { Radar, randomDetect, signatureModifier } from "./radar.js";
 
 const VISUAL_HORIZON_K = 2.78; // km per sqrt(m), C_VISUALHOR
 const IR_EXTINCTION = 0.25;
@@ -18,6 +18,27 @@ export class OpticalSensor {
     this.lastScan = -1e9;
     this.illuminator = null;
     this.lastMargin_dB = -99;
+    this.kind = "optical";
+    this.fcTargets = new Map();
+  }
+
+  // optical sensors guide no weapons: no fire-control channels
+  fcChannelsFree() {
+    return 0;
+  }
+
+  requestTrack() {
+    return false;
+  }
+
+  releaseTrack() {}
+
+  /** Approximate detection range against a target signature, for range rings in the UI. */
+  nominalRange_km(signature_dB, targetHeight_m) {
+    const sigRange = this.db.refRange_km * Math.pow(10, signature_dB / 20);
+    const horizon =
+      VISUAL_HORIZON_K * (Math.sqrt(Math.max(targetHeight_m, 0)) + Math.sqrt(Math.max(this.parent.alt + this.sensorHeight_m, 0)));
+    return Math.min(sigRange, horizon, this.db.maxRange_km);
   }
 
   /** IR signature (aspect-dependent) or optical cross-section of the target, in dB. */
@@ -67,4 +88,12 @@ export class OpticalSensor {
     if (useRandom) return randomDetect(margin_dB, p.world.rng);
     return margin_dB >= 0;
   }
+}
+
+/** Build a platform's sensor from its fit entry {name, type, mountAz_deg}. */
+export function createSensor(world, spec, parent, sensorHeight_m = 0) {
+  const opts = { mountAz_rad: spec.mountAz_deg * DEG, sensorHeight_m };
+  return spec.type === "optical"
+    ? new OpticalSensor(world.data.opticals[spec.name], parent, opts)
+    : new Radar(world.data.radars[spec.name], parent, opts);
 }

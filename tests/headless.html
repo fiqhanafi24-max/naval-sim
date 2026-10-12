@@ -191,7 +191,10 @@ check("Damage table interpolates", Math.abs(damageFactor([[0, 0], [10, 1]], 5) -
   const intercepts = count(/intercepted/);
   lines.push(`INFO Scenario outcome: ${all.filter((o) => o.damage > 0).map(fmt).join("; ") || "no ship damaged"}; ${intercepts} missiles intercepted; ${count(/has been shot down/)} aircraft shot down`);
   check("SAM expenditure is reasonable (at most 4 per anti-ship missile)", samsFired <= 4 * asmFired, `${samsFired} SAMs vs ${asmFired} anti-ship missiles`);
-  check("Surface contacts aren't re-announced every radar sweep", count(/New contact/) <= 8, `${count(/New contact/)} 'New contact' events`);
+  const st = w.stats;
+  check("Losses & expenditures are counted", Object.keys(st.blue.expended).length > 0 && Object.values(st.red.lost).reduce((a, b) => a + b, 0) === all.filter((o) => o.side === "red" && o.dead).length,
+    `blue expended ${JSON.stringify(st.blue.expended).slice(0, 120)}…; red lost ${JSON.stringify(st.red.lost)}`);
+  check("Surface contacts aren't re-announced every radar sweep", count(/New surface contact/) <= 8, `${count(/New surface contact/)} new surface contact events`);
   results.events = w.events.map((e) => `${(e.t / 60).toFixed(1).padStart(5)}m [${e.side}] ${e.text}`);
   lines.push("", "Event log:", ...results.events);
 }
@@ -238,6 +241,35 @@ check("Damage table interpolates", Math.abs(damageFactor([[0, 0], [10, 1]], 5) -
   for (let i = 0; i < 6000; i++) w.step(0.1);
   const fired = w.events.filter((e) => /fired \d+ x MM-40 B3/.test(e.text)).map((e) => e.text);
   check("Brunei: Darussalam OPV fires Exocet MM40 Block 3", fired.length > 0, `${fired.join("; ") || "no launch"}; target damage ${(r.damage * 100).toFixed(0)}%`);
+}
+
+// 6d. Contacts: designated on detection, identified by lookouts inside visual range only
+{
+  const idAt = (km) => {
+    const w = new World(data, atmo, { seed: 21, ai: { blue: { guns: false }, red: { guns: false } }, units: [
+      { side: "blue", class: "Arleigh Burke DDGHM", lat_deg: 60, lon_deg: 0, heading_deg: 0, speed_kts: 0 },
+      { side: "red", class: "Pr 956 Sarych", lat_deg: 60 + km / 111.2, lon_deg: 0, heading_deg: 90, speed_kts: 0 },
+    ] });
+    for (let i = 0; i < 300; i++) w.step(0.1);
+    const tr = [...w.tracks.blue.values()][0];
+    return tr ? `${w.trackName(tr)}${tr.identified ? " [identified]" : ""}` : "no track";
+  };
+  const near = idAt(12), far = idAt(28);
+  check("Contacts: lookouts identify a ship at 12 km", /^SKUNK #1 \(Pr 956 Sarych\) \[identified\]$/.test(near), near);
+  check("Contacts: radar alone at 28 km detects but doesn't identify", /^SKUNK #1 \(Surface contact\)$/.test(far), far);
+}
+
+// 6e. Plotted course and throttle preset
+{
+  const w = new World(data, atmo, { seed: 22, units: [
+    { side: "blue", class: "Arleigh Burke DDGHM", lat_deg: 60, lon_deg: 0, heading_deg: 0, speed_kts: 0 },
+  ] });
+  const [b] = w.ships();
+  b.setThrottle("full");
+  b.setRoute([{ lat: (60 + 10 / 111.2) * DEG, lon: 0 }, { lat: (60 + 10 / 111.2) * DEG, lon: (10 / 55.6) * DEG }]);
+  for (let i = 0; i < 20000 && b.route.length; i++) w.step(0.1);
+  check("Plotted course: ship sails both waypoints at full speed", b.route.length === 0 && Math.round(b.goalSpeed_kts) === Math.round(0.85 * b.db.maxSpeed_kts),
+    `waypoints left ${b.route.length}, goal speed ${b.goalSpeed_kts} kts, t=${(w.t / 60).toFixed(1)} min`);
 }
 
 // 7. Historical scenarios: run each to its time limit with a simple blue plan

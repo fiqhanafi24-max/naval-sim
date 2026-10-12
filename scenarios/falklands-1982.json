@@ -1,6 +1,7 @@
 {
   "name": "Falklands, 4 May 1982",
   "description": "You command the Royal Navy's Type 42 picket line west of the carrier group. An Argentine SP-2H Neptune is reporting your positions. Super Étendards armed with single AM-39 Exocets will come in at wave-top height from the west, below your radar horizon until they fire. Your Sea Dart and Sea Wolf are your only defences; there are no Sea Harriers in this simulation yet. Survive two hours.",
+  "startTime": "1982-05-04T14:00:00Z",
   "seed": 1982,
   "endAt_s": 7200,
   "camera": {

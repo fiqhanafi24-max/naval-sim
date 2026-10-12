@@ -15,6 +15,8 @@ export const SIDES = ["blue", "red"];
 // as tcSensorMapTrack's surface/missile/air Stale and AgeOut times
 const STALE_S = { ship: 120, missile: 15, aircraft: 30 };
 const AGE_OUT_S = { ship: 1800, missile: 40, aircraft: 300 };
+// a track's type (surface / air / missile) is known after this long (tcRadar::UpdateSensorMap)
+const CLASSIFY_S = 10;
 const AI_INTERVAL_S = 1;
 const MAX_SAMS_PER_THREAT = 2;
 
@@ -63,6 +65,7 @@ export class World {
     this.pendingFlights = (scenario.air || []).map((f) => ({ ...f }));
     this.strikes = { blue: [], red: [], ...JSON.parse(JSON.stringify(scenario.strikes || {})) };
     this.over = null;
+    this.stats = { blue: { expended: {}, lost: {} }, red: { expended: {}, lost: {} } };
 
     for (const u of scenario.units) {
       const db = data.ships[u.class];
@@ -129,7 +132,7 @@ export class World {
       heading_deg: bearing(from, track) / DEG, home: pkg.from,
       mission: { type: "strike", targetId, alt_m: pkg.alt_m, launchFraction: pkg.launchFraction },
     });
-    this.log(side, `${pkg.count} x ${pkg.class} (${pkg.callsign}) launched against ${track.className}`, "launch");
+    this.log(side, `${pkg.count} x ${pkg.class} (${pkg.callsign}) launched against ${this.trackName(track)}`, "launch");
     return { ok: true };
   }
 
@@ -152,6 +155,40 @@ export class World {
 
   getTrack(side, id) {
     return this.tracks[side].get(id);
+  }
+
+  /** Next contact designation for a side: SKUNK (surface), BOGEY (air), VAMPIRE (missile). */
+  designate(side, kind) {
+    const prefix = { ship: "SKUNK", aircraft: "BOGEY", missile: "VAMPIRE" }[kind] || "TRACK";
+    this.designations ||= { blue: {}, red: {} };
+    const n = (this.designations[side][prefix] = (this.designations[side][prefix] || 0) + 1);
+    return `${prefix} #${n}`;
+  }
+
+  /** Mark a track identified; logged unless it was identified on first detection. */
+  identify(side, track, source, quiet = false) {
+    if (track.identified) return;
+    track.identified = true;
+    if (!quiet && track.kind !== "missile") this.log(side, `${track.designation} identified as ${track.className} (${source})`, "contact");
+  }
+
+  /** What the side knows a track to be: class if identified, else the kind once classified. */
+  trackLabel(tr) {
+    if (tr.identified) return tr.className;
+    const classified = tr.error_m > 0 || this.t - tr.firstSeen >= CLASSIFY_S;
+    if (!classified) return "Unknown contact";
+    return { ship: "Surface contact", aircraft: "Air contact", missile: "Missile" }[tr.kind] || "Contact";
+  }
+
+  /** "SKUNK #3 (Pr 956 Sarych)" or "SKUNK #3 (Surface contact)". */
+  trackName(tr) {
+    return `${tr.designation} (${this.trackLabel(tr)})`;
+  }
+
+  /** Count a weapon fired, for the Losses & Expenditures report. */
+  expend(side, item, n = 1) {
+    const e = this.stats[side].expended;
+    e[item] = (e[item] || 0) + n;
   }
 
   /** A sensor track updated recently enough for defences to engage. */
@@ -211,7 +248,7 @@ export class World {
         for (const o of this.objects.values()) {
           if (o.dead || o.side === ship.side || o.kind === "round") continue;
           if (trackOnly && !this.tracks[ship.side].has(o.id)) continue;
-          if (radar.canDetect(o, true)) this.updateTrack(ship.side, o, radar.db.name, 0, this.measure(radar, o));
+          if (radar.canDetect(o, true)) this.updateTrack(ship.side, o, radar.db.name, 0, this.measure(radar, o), radar);
         }
       }
     }
@@ -246,19 +283,27 @@ export class World {
   /**
    * @param {number} error_m intel report position error (random), 0 for sensor tracks
    * @param {{pos, angleError_deg}} [measured] sensor report from measure()
+   * @param {object} [sensor] detecting sensor; a strong enough return identifies the contact
    */
-  updateTrack(side, o, source, error_m = 0, measured = null) {
+  updateTrack(side, o, source, error_m = 0, measured = null, sensor = null) {
     const tracks = this.tracks[side];
     const existing = tracks.get(o.id);
+    // identification: signal margin above the sensor's ID threshold (GCB2 IdThreshold_dB;
+    // radars are mostly 99 dB, so in practice lookouts identify), or a report naming the class
+    const idNow = error_m > 0 || (sensor != null && sensor.lastMargin_dB >= (sensor.db.idThreshold_dB ?? 99));
     let pos = measured ? measured.pos : { lat: o.lat, lon: o.lon, alt: o.alt };
     if (error_m > 0) {
       pos = offset(pos, this.rng.next() * 2 * Math.PI, Math.abs(this.rng.gaussian()) * error_m);
     }
     // a sensor track is better than an intel report; don't overwrite a fresh one with intel
-    if (existing && error_m > 0 && existing.error_m === 0 && this.t - existing.t < 30) return;
-    // simple fusion: keep a recent report from a more accurate radar
+    const keepSensorTrack = existing && error_m > 0 && existing.error_m === 0 && this.t - existing.t < 30;
+    // simple fusion: keep a recent report from a more accurate sensor
     const quality = measured ? measured.angleError_deg : Infinity;
-    if (existing && existing.quality < quality && this.t - existing.t < 5) return;
+    const keepBetter = existing && existing.quality < quality && this.t - existing.t < 5;
+    if (keepSensorTrack || keepBetter) {
+      if (idNow) this.identify(side, existing, source);
+      return;
+    }
     // intel tracks last until the next report is due; sensor tracks go stale quickly
     const intel = this.intel[side];
     const life_s = error_m > 0 && intel ? intel.interval_s * 1.2 : AGE_OUT_S[o.kind];
@@ -267,16 +312,20 @@ export class World {
       lat: pos.lat, lon: pos.lon, alt: o.alt, heading: o.heading, pitch: o.pitch || 0,
       speed_kts: o.speed_kts, t: this.t, expires: this.t + life_s, source, error_m, quality,
       firstSeen: existing ? existing.firstSeen : this.t,
+      designation: existing ? existing.designation : this.designate(side, o.kind),
+      identified: existing ? existing.identified : false,
     };
     tracks.set(o.id, track);
+    if (idNow) this.identify(side, track, source, !existing);
     if (o.kind === "missile") {
       track.announced = existing?.announced || false;
       if (!track.announced && this.threatens(side, track)) {
         track.announced = true;
-        this.log(side, `Inbound missile detected (${source})`, "threat");
+        this.log(side, `${track.designation} inbound missile detected (${source})`, "threat");
       }
     } else if (!existing) {
-      this.log(side, `${o.kind === "aircraft" ? "Air contact" : "New contact"}: ${o.db.name} (${source})`, "contact");
+      const what = o.kind === "aircraft" ? "air" : "surface";
+      this.log(side, `New ${what} contact ${track.designation}${track.identified ? ` (${track.className})` : ""} (${source})`, "contact");
     }
   }
 
@@ -338,6 +387,7 @@ export class World {
     const m = new Missile(this, db, { shooter: ship, launcher: L, targetId, datum, fcRadar });
     this.add(m);
     L.count--;
+    this.expend(ship.side, db.name);
     L.arm.lastFire = this.t;
     return { ok: true, missile: m };
   }
@@ -404,6 +454,7 @@ export class World {
     }
     if (o.kind === "aircraft") {
       o.dead = true;
+      this.stats[o.side].lost[o.db.name] = (this.stats[o.side].lost[o.db.name] || 0) + 1;
       this.objects.delete(o.id);
       for (const side of SIDES) this.tracks[side].delete(o.id);
       this.log(o.side, `${o.name} ${reason || "has been shot down"}`, "lost");
@@ -412,6 +463,7 @@ export class World {
     }
     o.dead = true;
     o.speed_kts = 0;
+    this.stats[o.side].lost[o.db.name] = (this.stats[o.side].lost[o.db.name] || 0) + 1;
     for (const r of o.radars) r.active = false;
     for (const side of SIDES) this.tracks[side].delete(o.id);
     this.log(o.side, `${o.name} has been sunk`, "lost");
@@ -480,7 +532,7 @@ export class World {
       if (s.remaining > 0 && s.launchers.every((i) => ammoLeft(ship, ship.launchers[i]) <= 0)) s.remaining = 0;
       if (s.remaining <= 0 && s.fired) {
         const tr = this.getTrack(ship.side, s.targetId);
-        this.log(ship.side, `${ship.name} fired ${s.fired} x ${ship.launchers[s.launchers[0]].item} at ${tr ? tr.className : "target"}`, "launch");
+        this.log(ship.side, `${ship.name} fired ${s.fired} x ${ship.launchers[s.launchers[0]].item} at ${tr ? this.trackName(tr) : "target"}`, "launch");
       }
     }
     this.salvos = this.salvos.filter((s) => s.remaining > 0);
@@ -542,7 +594,7 @@ export class World {
           const res = this.launch(ship, i, tr.id);
           if (res.ok) {
             inFlight++;
-            this.log(side, `${ship.name} engaging ${tr.kind === "aircraft" ? tr.className : "inbound missile"} with ${db.name}`, "launch");
+            this.log(side, `${ship.name} engaging ${this.trackName(tr)} with ${db.name}`, "launch");
             break;
           }
         }
@@ -590,6 +642,7 @@ export class World {
         if (!target) continue;
         this.add(new Round(this, db, { shooter: ship, launcher: L, target }));
         L.count--;
+        this.expend(side, db.name, db.burstCount || 1);
         L.arm.lastFire = t;
       }
     }

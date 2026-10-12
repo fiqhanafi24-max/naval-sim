@@ -3,7 +3,7 @@
 // climb rate, fuel burn); GCB2 flies jets with a full aero model, which isn't ported.
 // Not ported yet: fighters, air-to-air weapons, countermeasures, take-off and landing.
 
-import { Radar } from "./radar.js";
+import { createSensor } from "./optical.js";
 import { DEG, KTS_TO_MPS, advance, bearing, groundRange_m, offset, wrapPi, wrap2Pi } from "./geo.js";
 
 const HOME_RADIUS_M = 5000;
@@ -41,7 +41,7 @@ export class Aircraft {
     this.status = this.mission.type;
     this.orbitIndex = 0;
 
-    this.radars = db.sensors.map((s) => new Radar(world.data.radars[s.name], this, { mountAz_rad: s.mountAz_deg * DEG }));
+    this.radars = db.sensors.map((s) => createSensor(world, s, this));
     const arms = new Map();
     this.launchers = db.launchers.map((l) => ({
       ...l,
@@ -141,7 +141,7 @@ export class Aircraft {
       if (this.launchers[i].count > 0 && world.launch(this, i, m.targetId).ok) m.fired = (m.fired || 0) + 1;
     }
     if (!this.launchers.some((l) => l.count > 0)) {
-      world.log(this.side, `${this.name} fired ${m.fired} x ${this.launchers[0].item} at ${track.className}`, "launch");
+      world.log(this.side, `${this.name} fired ${m.fired} x ${this.launchers[0].item} at ${world.trackName(track)}`, "launch");
       this.returnToBase(null);
     }
   }
