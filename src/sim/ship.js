@@ -1,6 +1,7 @@
 // Surface ship: simple kinematics (accelerate / turn toward ordered course and speed),
 // a radar fit and missile launchers taken from the GCB2 database.
 
+import { EsmSensor } from "./esm.js";
 import { createSensor } from "./optical.js";
 import { DEG, KTS_TO_MPS, advance, bearing, groundRange_m, wrapPi, wrap2Pi } from "./geo.js";
 
@@ -32,7 +33,9 @@ export class Ship {
     // GCB2 places sensors at 80% of the model height; effective height is about 40% of it
     const sensorHeight_m = 2 * (db.effectiveHeight_m || 10);
     // all sensors (radars and lookouts); the name is historical
-    this.radars = db.sensors.map((s) => createSensor(world, s, this, sensorHeight_m));
+    this.radars = db.sensors.filter((s) => s.type !== "esm").map((s) => createSensor(world, s, this, sensorHeight_m));
+    this.esm = db.sensors.filter((s) => s.type === "esm")
+      .map((s) => new EsmSensor(world.data.esms[s.name], this, { mountAz_rad: s.mountAz_deg * DEG, sensorHeight_m }));
     this.magazine = { ...(db.magazine || {}) };
     // entries with the same launcher id (e.g. SM-1 and Harpoon on a Mk-13 arm) share one reload timer
     const arms = new Map();

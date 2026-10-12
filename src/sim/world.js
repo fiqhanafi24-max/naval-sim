@@ -17,6 +17,38 @@ const STALE_S = { ship: 120, missile: 15, aircraft: 30 };
 const AGE_OUT_S = { ship: 1800, missile: 40, aircraft: 300 };
 // a track's type (surface / air / missile) is known after this long (tcRadar::UpdateSensorMap)
 const CLASSIFY_S = 10;
+// ESM bearings older than this aren't used for cross-fixes
+const ESM_FIX_WINDOW_S = 300;
+const ESM_MIN_BASELINE_M = 3000;
+const ESM_MAX_FIX_ERROR_M = 20000;
+
+/**
+ * Cross-fix from two bearings taken far enough apart at a useful crossing angle.
+ * @returns {{lat, lon, error_m}|null}
+ */
+function crossFix(bearings) {
+  const b = bearings[bearings.length - 1];
+  for (let i = bearings.length - 2; i >= 0; i--) {
+    const a = bearings[i];
+    if (groundRange_m(a, b) < ESM_MIN_BASELINE_M) continue;
+    const cut = Math.abs(wrapPi(b.brg - a.brg));
+    if (cut < 10 * DEG || cut > 170 * DEG) continue;
+    // lines a + s·da and b + u·db in a local east/north plane centred on a
+    const pb = { x: (b.lon - a.lon) * Math.cos(a.lat) * 6378140, y: (b.lat - a.lat) * 6378140 };
+    const da = { x: Math.sin(a.brg), y: Math.cos(a.brg) };
+    const db = { x: Math.sin(b.brg), y: Math.cos(b.brg) };
+    const cross = (p, q) => p.x * q.y - p.y * q.x;
+    const den = cross(da, db);
+    const s = cross(pb, db) / den;
+    const u = cross(pb, da) / den;
+    if (!(s > 0 && u > 0)) continue;
+    const error_m = Math.max(1000, (Math.max(s, u) * Math.max(a.err, b.err)) / Math.sin(cut));
+    if (error_m > ESM_MAX_FIX_ERROR_M) continue;
+    const p = offset(a, a.brg, s);
+    return { lat: p.lat, lon: p.lon, error_m };
+  }
+  return null;
+}
 const AI_INTERVAL_S = 1;
 const MAX_SAMS_PER_THREAT = 2;
 
@@ -76,6 +108,45 @@ export class World {
       const cfg = scenario.intel?.[side];
       if (cfg) this.intel[side] = { ...cfg, next: cfg.firstAt_s ?? 0 };
     }
+
+    // doctrine: Air / Surface engagement (free, tight = identified only, hold) and EMCON,
+    // per side with per-unit overrides (unit.doctrine). Older scenarios set ai.weaponsFree.
+    const d = scenario.doctrine || {};
+    this.doctrine = {};
+    for (const side of SIDES) {
+      this.doctrine[side] = { air: "free", surface: this.ai[side]?.weaponsFree ? "free" : "hold", emcon: "active", ...(d[side] || {}) };
+    }
+    for (const ship of this.ships()) this.applyEmcon(ship);
+  }
+
+  /** Effective doctrine setting for a unit: its own override, else its side's. */
+  doc(unit, key) {
+    return unit.doctrine?.[key] ?? this.doctrine[unit.side][key];
+  }
+
+  /** Change a side's doctrine (unit = null) or one unit's override (value null = inherit). */
+  setDoctrine(side, key, value, unit = null) {
+    if (unit) {
+      unit.doctrine ||= {};
+      if (value == null) delete unit.doctrine[key];
+      else unit.doctrine[key] = value;
+      if (key === "emcon") this.applyEmcon(unit);
+    } else {
+      this.doctrine[side][key] = value;
+      if (key === "emcon") for (const s of this.ships(side)) this.applyEmcon(s);
+    }
+  }
+
+  /** Radars on or off by EMCON; ESM and lookouts are passive and stay on. */
+  applyEmcon(unit) {
+    const on = this.doc(unit, "emcon") !== "passive";
+    for (const r of unit.radars) if (r.kind === "radar") r.active = on;
+  }
+
+  /** Doctrine allows engaging this track: hold never, tight only once identified. */
+  mayEngage(unit, key, tr) {
+    const v = this.doc(unit, key);
+    return v === "free" || (v === "tight" && tr.identified);
   }
 
   add(o) {
@@ -124,6 +195,7 @@ export class World {
     const track = this.getTrack(side, targetId);
     if (!pkg || pkg.available <= 0) return { ok: false, reason: "no strike package available" };
     if (!track || track.kind !== "ship") return { ok: false, reason: "no surface track" };
+    if (track.bearingOnly) return { ok: false, reason: "bearing-only contact, no position yet" };
     pkg.available--;
     const from = { lat: pkg.from.lat_deg * DEG, lon: pkg.from.lon_deg * DEG };
     this.spawnFlight({
@@ -175,9 +247,11 @@ export class World {
   /** What the side knows a track to be: class if identified, else the kind once classified. */
   trackLabel(tr) {
     if (tr.identified) return tr.className;
+    const emit = tr.emitters?.length ? ` [${tr.emitters.join(", ")}]` : "";
+    if (tr.bearingOnly) return `${{ ship: "Surface", aircraft: "Air", missile: "Missile" }[tr.kind] || ""} emitter, bearing only${emit}`;
     const classified = tr.error_m > 0 || this.t - tr.firstSeen >= CLASSIFY_S;
-    if (!classified) return "Unknown contact";
-    return { ship: "Surface contact", aircraft: "Air contact", missile: "Missile" }[tr.kind] || "Contact";
+    if (!classified) return `Unknown contact${emit}`;
+    return `${{ ship: "Surface contact", aircraft: "Air contact", missile: "Missile" }[tr.kind] || "Contact"}${emit}`;
   }
 
   /** "SKUNK #3 (Pr 956 Sarych)" or "SKUNK #3 (Surface contact)". */
@@ -224,6 +298,7 @@ export class World {
     }
 
     this.updateSensors(t);
+    this.updateEsm(t);
     this.updateIntel(t);
     this.expireTracks(t);
 
@@ -251,6 +326,74 @@ export class World {
           if (radar.canDetect(o, true)) this.updateTrack(ship.side, o, radar.db.name, 0, this.measure(radar, o), radar);
         }
       }
+    }
+  }
+
+  /** ESM sweep: every receiver listens for enemy emitters on its scan period. */
+  updateEsm(t) {
+    for (const p of [...this.ships(), ...this.aircraft()]) {
+      for (const esm of p.esm || []) {
+        if (t - esm.lastScan < esm.db.scanPeriod_s) continue;
+        esm.lastScan = t;
+        for (const o of this.objects.values()) {
+          if (o.dead || o.side === p.side || o.kind === "round") continue;
+          const res = esm.detect(o);
+          if (res) this.esmReport(p.side, o, esm, res);
+        }
+      }
+    }
+  }
+
+  /**
+   * An ESM bearing on an emitter. Adds the emitter type to an existing position track, or
+   * builds a bearing-only contact whose bearings are cross-fixed into an approximate position.
+   */
+  esmReport(side, o, esm, res) {
+    const t = this.t;
+    const p = esm.parent;
+    const key = esm.key ?? (esm.key = [...esm.db.name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7));
+    const brg = res.bearing + esm.db.angleError_deg * DEG * this.errorFactor(p.id + 200, key, res.bearing);
+    const emitterKnown = res.margin_dB >= esm.db.idThreshold_dB;
+    const tracks = this.tracks[side];
+    let tr = tracks.get(o.id);
+    const addEmitter = (track) => {
+      if (emitterKnown && !track.emitters.includes(res.emitter)) track.emitters.push(res.emitter);
+    };
+    if (tr && !tr.bearingOnly && !tr.esmFix) {
+      tr.emitters ||= [];
+      addEmitter(tr);
+      return;
+    }
+    if (!tr) {
+      tr = {
+        id: o.id, kind: o.kind, className: o.db.name, side: o.side, bearingOnly: true, bearings: [], emitters: [],
+        designation: this.designate(side, o.kind), identified: false, firstSeen: t,
+        lat: p.lat, lon: p.lon, alt: 0, heading: 0, pitch: 0, speed_kts: 0, t, expires: t + 120,
+        source: esm.db.name, error_m: 1e6, quality: Infinity,
+      };
+      tracks.set(o.id, tr);
+      addEmitter(tr);
+      const what = o.kind === "missile" ? "missile seeker" : o.kind === "aircraft" ? "air emitter" : "surface emitter";
+      this.log(side, `${tr.designation}: ${what} ${tr.emitters[0] || ""} detected, bearing ${Math.round(((brg / DEG) % 360 + 360) % 360)}° (${esm.db.name})`,
+        o.kind === "missile" ? "threat" : "contact");
+    }
+    addEmitter(tr);
+    tr.bearings.push({ lat: p.lat, lon: p.lon, brg, t, err: esm.db.angleError_deg * DEG, platform: p.id });
+    tr.bearings = tr.bearings.filter((b) => t - b.t <= ESM_FIX_WINDOW_S).slice(-12);
+    tr.t = t;
+    tr.source = esm.db.name;
+    if (tr.bearingOnly) {
+      tr.lat = p.lat;
+      tr.lon = p.lon;
+      tr.expires = t + 120;
+    }
+    // missiles move too fast to cross-fix usefully
+    const fix = o.kind === "missile" ? null : crossFix(tr.bearings);
+    if (fix) {
+      const first = tr.bearingOnly;
+      Object.assign(tr, { bearingOnly: false, esmFix: true, lat: fix.lat, lon: fix.lon, alt: o.kind === "aircraft" ? 5000 : 0,
+        error_m: fix.error_m, expires: t + AGE_OUT_S[o.kind], source: "ESM cross-fix" });
+      if (first) this.log(side, `${tr.designation} located by ESM cross-fix (±${(fix.error_m / 1000).toFixed(1)} km)`, "contact");
     }
   }
 
@@ -313,6 +456,7 @@ export class World {
       speed_kts: o.speed_kts, t: this.t, expires: this.t + life_s, source, error_m, quality,
       firstSeen: existing ? existing.firstSeen : this.t,
       designation: existing ? existing.designation : this.designate(side, o.kind),
+      emitters: existing?.emitters || [],
       identified: existing ? existing.identified : false,
     };
     tracks.set(o.id, track);
@@ -367,6 +511,7 @@ export class World {
     if (this.t - L.arm.lastFire < L.cycle_s) return { ok: false, reason: "launcher reloading" };
     const track = this.getTrack(ship.side, targetId);
     if (!track) return { ok: false, reason: "no track" };
+    if (track.bearingOnly) return { ok: false, reason: "bearing-only contact, no position yet" };
     const db = this.data.missiles[L.item];
     const target = this.get(targetId);
     if (!target || target.dead) return { ok: false, reason: "target gone" };
@@ -543,7 +688,7 @@ export class World {
   runAi(side) {
     const cfg = this.ai[side] || {};
     if (cfg.autoDefend !== false) this.airDefense(side);
-    if (cfg.weaponsFree) {
+    if (this.doctrine[side].surface !== "hold") {
       this.offense(side, cfg.salvo || 4);
       this.aiStrike(side);
     }
@@ -553,8 +698,9 @@ export class World {
   aiStrike(side) {
     const idx = this.strikes[side].findIndex((p) => p.available > 0 && this.t >= (p.notBefore_s || 0));
     if (idx < 0) return;
+    const tight = this.doctrine[side].surface === "tight";
     const target = [...this.tracks[side].values()]
-      .filter((tr) => tr.kind === "ship")
+      .filter((tr) => tr.kind === "ship" && !tr.bearingOnly && (!tight || tr.identified))
       .sort((a, b) => (this.data.ships[b.className]?.length_m || 0) - (this.data.ships[a.className]?.length_m || 0))[0];
     if (target) this.callStrike(side, idx, target.id);
   }
@@ -580,6 +726,7 @@ export class World {
       const shooters = [...own].sort((a, b) => groundRange_m(a, threat) - groundRange_m(b, threat));
       for (const ship of shooters) {
         if (inFlight >= MAX_SAMS_PER_THREAT) break;
+        if (tr.kind === "aircraft" && !this.mayEngage(ship, "air", tr)) continue;
         const order = ship.launchers
           .map((l, i) => i)
           .filter((i) => {
@@ -608,10 +755,11 @@ export class World {
    */
   offense(side, salvoSize) {
     if (this.salvos.some((s) => this.get(s.shipId)?.side === side)) return;
-    const carriers = this.ships(side).filter((s) => this.antiShipLaunchers(s).length);
+    const carriers = this.ships(side).filter((s) => this.antiShipLaunchers(s).length && this.doc(s, "surface") !== "hold");
     if (!carriers.length) return;
     const targets = [...this.tracks[side].values()]
-      .filter((tr) => tr.kind === "ship" && this.t - (this.lastSalvoAt.get(`${side}:${tr.id}`) ?? -1e9) >= 600)
+      .filter((tr) => tr.kind === "ship" && !tr.bearingOnly && this.t - (this.lastSalvoAt.get(`${side}:${tr.id}`) ?? -1e9) >= 600)
+      .filter((tr) => tr.identified || this.doctrine[side].surface === "free")
       .sort((a, b) => (this.data.ships[b.className]?.length_m || 0) - (this.data.ships[a.className]?.length_m || 0));
     for (const tr of targets) {
       const datum = predict(tr, this.t);
@@ -663,10 +811,10 @@ export class World {
         if (range_m > reach_m || !this.threatens(ship.side, tr)) continue;
         score = range_m; // missiles first, nearest first
       } else if (o.kind === "aircraft" && db.targetFlags & AIR_TARGET) {
-        if (range_m > Math.min(1000 * db.maxRange_km, 8000)) continue;
+        if (range_m > Math.min(1000 * db.maxRange_km, 8000) || !this.mayEngage(ship, "air", tr)) continue;
         score = 5e5 + range_m; // after missiles, before ships
       } else if (o.kind === "ship" && db.targetFlags & SURFACE_TARGET && db.type === "gun") {
-        if (range_m > Math.min(1000 * db.maxRange_km, levelRange_m)) continue;
+        if (range_m > Math.min(1000 * db.maxRange_km, levelRange_m) || !this.mayEngage(ship, "surface", tr)) continue;
         score = 1e6 + range_m;
       } else {
         continue;

@@ -3,6 +3,7 @@
 // climb rate, fuel burn); GCB2 flies jets with a full aero model, which isn't ported.
 // Not ported yet: fighters, air-to-air weapons, countermeasures, take-off and landing.
 
+import { EsmSensor } from "./esm.js";
 import { createSensor } from "./optical.js";
 import { DEG, KTS_TO_MPS, advance, bearing, groundRange_m, offset, wrapPi, wrap2Pi } from "./geo.js";
 
@@ -41,7 +42,8 @@ export class Aircraft {
     this.status = this.mission.type;
     this.orbitIndex = 0;
 
-    this.radars = db.sensors.map((s) => createSensor(world, s, this));
+    this.radars = db.sensors.filter((s) => s.type !== "esm").map((s) => createSensor(world, s, this));
+    this.esm = db.sensors.filter((s) => s.type === "esm").map((s) => new EsmSensor(world.data.esms[s.name], this, { mountAz_rad: s.mountAz_deg * DEG }));
     const arms = new Map();
     this.launchers = db.launchers.map((l) => ({
       ...l,

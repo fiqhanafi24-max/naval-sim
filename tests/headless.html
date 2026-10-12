@@ -272,6 +272,50 @@ check("Damage table interpolates", Math.abs(damageFactor([[0, 0], [10, 1]], 5) -
     `waypoints left ${b.route.length}, goal speed ${b.goalSpeed_kts} kts, t=${(w.t / 60).toFixed(1)} min`);
 }
 
+// 6f. ESM: hear a radar beyond radar range; EMCON passive hides it; two bearings cross-fix
+{
+  const esmRun = (emcon, reds) => {
+    const w = new World(data, atmo, { seed: 31, ai: { blue: { guns: false }, red: { guns: false } },
+      doctrine: { blue: { emcon } }, units: [
+        { side: "blue", class: "Arleigh Burke DDGHM", lat_deg: 60, lon_deg: 0, heading_deg: 0, speed_kts: 0 },
+        ...reds,
+      ] });
+    for (let i = 0; i < 1200; i++) w.step(0.1);
+    return { w, tr: [...w.tracks.red.values()].find((t) => t.kind === "ship") };
+  };
+  // 33 km: inside the ESM horizon between the two masts, outside the Sovremenny's radar horizon
+  const red = (brg_deg, name) => {
+    const p = offset({ lat: 60 * DEG, lon: 0 }, brg_deg * DEG, 33000);
+    return { side: "red", class: "Pr 956 Sarych", name, lat_deg: p.lat / DEG, lon_deg: p.lon / DEG, heading_deg: 0, speed_kts: 0 };
+  };
+  const a = esmRun("active", [red(0, "A")]);
+  check("ESM: Sovremenny hears the Burke's radar beyond radar range", !!a.tr && a.tr.emitters.length > 0,
+    a.tr ? `${a.w.trackName(a.tr)}, source ${a.tr.source}` : "no track");
+  const p = esmRun("passive", [red(0, "A")]);
+  check("ESM: with radars passive (EMCON) the Burke isn't found", !p.tr, p.tr ? p.w.trackName(p.tr) : "no track");
+  const f = esmRun("active", [red(0, "A"), red(60, "B")]);
+  const burke = f.w.ships("blue")[0];
+  const miss = f.tr && !f.tr.bearingOnly ? range3D_m(f.tr, burke) : null;
+  check("ESM: two ships' bearings cross-fix the Burke", miss != null && miss < 10000,
+    f.tr ? `${f.w.trackName(f.tr)}, source ${f.tr.source}${miss != null ? `, fix ${(miss / 1000).toFixed(1)} km off, ±${(f.tr.error_m / 1000).toFixed(1)} km` : ""}` : "no track");
+}
+
+// 6g. Doctrine: Air Hold stops SAMs engaging an aircraft overhead
+{
+  const run = (air) => {
+    const w = new World(data, atmo, { seed: 500, doctrine: { blue: { air } }, units: [
+      { side: "blue", class: "Arleigh Burke DDGHM", lat_deg: 60, lon_deg: 0, heading_deg: 0, speed_kts: 10 },
+    ], air: [
+      { side: "red", class: "Il-38", name: "Il-38 test", lat_deg: 60.4, lon_deg: 0, alt_m: 6000, heading_deg: 180,
+        home: { lat_deg: 62, lon_deg: 0 }, mission: { type: "patrol", center: { lat_deg: 60, lon_deg: 0 }, radius_km: 15, alt_m: 6000 } },
+    ] });
+    for (let i = 0; i < 3000; i++) w.step(0.1);
+    return w.events.filter((e) => /engaging BOGEY/.test(e.text)).length;
+  };
+  const free = run("free"), hold = run("hold");
+  check("Doctrine: Air Hold stops SAMs engaging aircraft", free > 0 && hold === 0, `free: ${free} engagements, hold: ${hold}`);
+}
+
 // 7. Historical scenarios: run each to its time limit with a simple blue plan
 for (const id of ["falklands-1982", "sidra-1986"]) {
   const sc = await fetch(`../scenarios/${id}.json`).then((r) => r.json());

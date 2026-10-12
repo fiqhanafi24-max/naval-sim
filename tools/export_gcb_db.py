@@ -127,6 +127,27 @@ def export_radar(db, name):
         "detectsMissile": bool(int(num(r["DetectsMissile"]))),
         "detectsGround": bool(int(num(r["DetectsGround"]))),
         "idThreshold_dB": num(r["IdThreshold_dB"], 99),
+        # emitter characteristics, for ESM (tcESMSensor::IsDetectedRadar)
+        "erpPeak_dBW": num(r["ERPpeak_dBW"]),
+        "freq_Hz": 0.5 * (num(r["MinFrequency_Hz"]) + num(r["MaxFrequency_Hz"])),
+    }
+
+
+def export_esm(db, name):
+    e = one(db, "select * from esm where DatabaseClass=?", name)
+    if not e:
+        return None
+    return {
+        "name": name,
+        "refRange_km": num(e["RefRange_km"]),
+        "maxRange_km": num(e["MaxRange_km"]),
+        "fov_deg": num(e["FieldOfView_deg"], 360),
+        "scanPeriod_s": num(e["ScanPeriod_s"], 10),
+        "minFreq_Hz": num(e["MinFrequency_Hz"]),
+        "maxFreq_Hz": num(e["MaxFrequency_Hz"]),
+        "idThreshold_dB": num(e["IdThreshold_dB"], 99),
+        "angleError_deg": num(e["AngleError_deg"], 5),
+        "isRWR": bool(int(num(e["IsRWR"]))),
     }
 
 
@@ -352,6 +373,12 @@ def export_fit(db, cls, loadout, data, keep=None):
             data["radars"][rad["name"]] = rad
             sensors.append({"name": rad["name"], "type": "radar", "mountAz_deg": num(ps["SensorAz"])})
             continue
+        # passive receivers: bearings to emitting radars
+        esm = export_esm(db, ps["SensorClass"])
+        if esm:
+            data["esms"][esm["name"]] = esm
+            sensors.append({"name": esm["name"], "type": "esm", "mountAz_deg": num(ps["SensorAz"])})
+            continue
         # visual lookouts and other non-IR search optics: they identify contacts
         opt = export_optical(db, ps["SensorClass"])
         if opt and opt["isSurveillance"] and not opt["isIR"]:
@@ -509,7 +536,7 @@ def main(db_path, out_path):
     db = sqlite3.connect(db_path)
     db.text_factory = lambda b: b.decode("utf-8", errors="replace")
     data = {"source": "GCB2 database (c) 2014 gcblue, BSD-3-Clause",
-            "ships": {}, "aircraft": {}, "radars": {}, "opticals": {}, "missiles": {}, "guns": {}, "warheads": {},
+            "ships": {}, "aircraft": {}, "radars": {}, "opticals": {}, "esms": {}, "missiles": {}, "guns": {}, "warheads": {},
             "damageEffects": {}, "signatures": {}}
 
     # hand-picked classes used by the built-in scenarios
@@ -549,7 +576,7 @@ def main(db_path, out_path):
 
     with open(out_path, "w") as f:
         json.dump(data, f, separators=(",", ":"))
-    for k in ("ships", "aircraft", "radars", "opticals", "missiles", "guns", "warheads", "damageEffects", "signatures"):
+    for k in ("ships", "aircraft", "radars", "opticals", "esms", "missiles", "guns", "warheads", "damageEffects", "signatures"):
         print("%-14s %d" % (k, len(data[k])))
     if skipped:
         print("skipped %d classes with incomplete data:" % len(skipped))

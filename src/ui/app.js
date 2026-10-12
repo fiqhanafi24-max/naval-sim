@@ -209,6 +209,39 @@ function rangeRings(o) {
   for (const [r, dashed] of ranges) ring(`rw${r}`, o, 1000 * r, RING_WEAPON, dashed);
 }
 
+/** ESM bearing lines (strobes) for a bearing-only contact; the latest one is labelled. */
+const STROBE_KM = 200;
+const STROBE_COLOR = Cesium.Color.fromCssColorString("#ffb547").withAlpha(0.75);
+function strobes(tr) {
+  const recent = tr.bearings.slice(-3);
+  recent.forEach((b, i) => {
+    const end = offsetLL(b, b.brg, STROBE_KM * 1000);
+    const e = upsert(`strobe${tr.id}-${i}`, () => ({
+      polyline: { positions: [], width: i === recent.length - 1 ? 2 : 1, material: new Cesium.PolylineDashMaterialProperty({ color: STROBE_COLOR, dashLength: 10 }) },
+    }));
+    setLine(e, [Cesium.Cartesian3.fromRadians(b.lon, b.lat, 100), Cesium.Cartesian3.fromRadians(end.lon, end.lat, 100)]);
+    if (i === recent.length - 1) {
+      const lab = upsert(`strobeLabel${tr.id}`, () => ({
+        label: {
+          text: "", font: "11px sans-serif", fillColor: COLORS.amber, outlineColor: Cesium.Color.BLACK, outlineWidth: 3,
+          style: Cesium.LabelStyle.FILL_AND_OUTLINE, disableDepthTestDistance: Number.POSITIVE_INFINITY,
+        },
+      }));
+      lab.position = Cesium.Cartesian3.fromRadians(end.lon, end.lat, 100);
+      lab.label.text = world.trackName(tr);
+      lab._objId = tr.id;
+    }
+  });
+}
+
+/** Point at a bearing and distance from p (radians), on a sphere. */
+function offsetLL(p, brg, dist_m) {
+  const d = dist_m / 6378140;
+  const lat = Math.asin(Math.sin(p.lat) * Math.cos(d) + Math.cos(p.lat) * Math.sin(d) * Math.cos(brg));
+  const lon = p.lon + Math.atan2(Math.sin(brg) * Math.sin(d) * Math.cos(p.lat), Math.cos(d) - Math.sin(p.lat) * Math.sin(lat));
+  return { lat, lon };
+}
+
 /** Dotted plotted-course line with waypoint markers. */
 function routeLine(o) {
   const pts = [o, ...o.route].map((p) => Cesium.Cartesian3.fromRadians(p.lon, p.lat, 50));
@@ -275,6 +308,10 @@ function renderGlobe() {
   }
   if (!showTruth) {
     for (const tr of world.tracks[PLAYER].values()) {
+      if (tr.bearingOnly) {
+        strobes(tr);
+        continue;
+      }
       const p = predict(tr, world.t);
       const view = { ...tr, ...p };
       if (tr.kind === "ship") {
@@ -476,8 +513,9 @@ function renderStatus(force = false) {
   const asm = isAir ? [] : o.launchers.filter((l) => ammoLeft(o, l) > 0 && isAntiShip(data.missiles[l.item]));
   const tgt = world.getTrack(PLAYER, targetId);
   // rebuild only when the structure changes, so inputs keep focus; numbers update in place below
-  const key = [o.id, o.dead, o.status, o.throttle, radarOn, asm.length, strikes.map((p) => p.available).join(),
-    contacts.map((c) => `${c.id}${c.identified ? "i" : ""}`).join(), targetId, tgt?.identified, plotting, o.route?.length].join("|");
+  const docKey = ["air", "surface", "emcon"].map((k) => `${k}:${o.doctrine?.[k] ?? "-"}:${world.doctrine[PLAYER][k]}`).join();
+  const key = [o.id, o.dead, o.status, o.throttle, radarOn, docKey, asm.length, strikes.map((p) => p.available).join(),
+    contacts.map((c) => `${c.id}${c.identified ? "i" : ""}${c.bearingOnly ? "b" : ""}${(c.emitters || []).length}`).join(), targetId, tgt?.identified, tgt?.bearingOnly, plotting, o.route?.length].join("|");
   if (!force && key === statusKey) return updateStatusNumbers(o, contacts, tgt);
   statusKey = key;
 
@@ -494,11 +532,20 @@ function renderStatus(force = false) {
       <button id="oPlot" class="${plotting ? "on" : ""}">${plotting ? "Plotting… (Esc)" : "Plot course"}</button>
       ${o.route.length ? `<button id="oClear">Clear course (${o.route.length} wp)</button>` : ""}
     </div>`;
-  const emcon = radars.length && !o.dead ? `
-    <h2>EMCON</h2>
-    <div class="emcon"><span>Radar</span><div class="seg" id="emcon">
-      <button data-r="on" class="${radarOn ? "on" : ""}">Active</button><button data-r="off" class="${radarOn ? "" : "on"}">Passive</button>
-    </div></div>` : "";
+  const docRow = (key, label, values) => {
+    const own = o.doctrine?.[key];
+    const side = world.doctrine[PLAYER][key];
+    return `<div class="emcon"><span>${label}</span><div class="seg">
+      <button data-doc="${key}" data-v="" class="${own == null ? "on" : ""}" title="Use the side's doctrine">Side (${side})</button>
+      ${values.map((v) => `<button data-doc="${key}" data-v="${v}" class="${own === v ? "on" : ""}">${v[0].toUpperCase() + v.slice(1)}</button>`).join("")}
+    </div></div>`;
+  };
+  const doctrine = o.dead ? "" : `
+    <h2>Doctrine</h2>
+    ${docRow("air", "Air", ["free", "tight", "hold"])}
+    ${isAir ? "" : docRow("surface", "Surface", ["free", "tight", "hold"])}
+    ${radars.length && !isAir ? docRow("emcon", "Radar", ["active", "passive"]) : ""}
+    ${o.esm?.length ? `<div class="meta">ESM: ${esc(o.esm.map((e) => e.db.name).join(", "))} (passive, always on)</div>` : ""}`;
   const weapons = o.launchers.length ? Object.entries(o.inventory()).map(([k, v]) => `<div>${v}× ${esc(k)}</div>`).join("") : '<div class="muted">No ported weapons</div>';
   const engage = tgt && !o.dead ? `
     <div class="act">
@@ -520,13 +567,14 @@ function renderStatus(force = false) {
     </dl>
     ${isAir && !o.dead && o.status !== "rtb" ? '<div class="orders"><button id="oRtb">Return to base</button></div>' : ""}
     ${throttle}
-    ${emcon}
+    ${doctrine}
     <h2>Weapons</h2>
     <div class="inv" id="dInv">${weapons}</div>
     <div id="dWstat">${weaponStatus(o)}</div>
     <h2>Target</h2>
     ${tgt ? `<div class="target"><span class="hostile">${esc(world.trackName(tgt))}</span><span class="meta" id="dTarget"></span></div>
-      <div class="meta">${esc(tgt.error_m ? `${tgt.source}, ±${(tgt.error_m / 1000).toFixed(1)} km` : tgt.source)}</div>${engage}`
+      <div class="meta">${esc(tgt.bearingOnly ? `${tgt.source}: bearing only. Needs a second bearing from another position, or a radar contact, before weapons can be fired.`
+        : tgt.error_m ? `${tgt.source}, ±${(tgt.error_m / 1000).toFixed(1)} km` : tgt.source)}</div>${tgt.bearingOnly ? "" : engage}`
       : '<div class="muted">Click a hostile contact on the map, or pick one below.</div>'}
     <h2>Surface contacts</h2>
     <div id="contacts">${contacts.length ? contacts.map((c) => `
@@ -552,6 +600,10 @@ function updateStatusNumbers(o, contacts, tgt) {
   $("dInv").innerHTML = Object.entries(o.inventory()).map(([k, v]) => `<div>${v}× ${esc(k)}</div>`).join("") || '<div class="muted">No ported weapons</div>';
   $("dWstat").innerHTML = weaponStatus(o);
   const where = (c) => {
+    if (c.bearingOnly) {
+      const b = c.bearings[c.bearings.length - 1];
+      return `strobe ${deg3(b.brg)} · ${Math.round(world.t - c.t)}s ago`;
+    }
     const p = predict(c, world.t);
     return `${deg3(bearing(o, p))} ${nm(groundRange_m(o, p))} · ${Math.round(world.t - c.t)}s ago`;
   };
@@ -583,9 +635,11 @@ $("status").addEventListener("click", (ev) => {
   if (!b) return;
   if (b.dataset.t) {
     o.setThrottle(b.dataset.t);
-  } else if (b.dataset.r) {
-    for (const r of o.radars) if (r.kind === "radar") r.active = b.dataset.r === "on";
-    world.log(PLAYER, `${o.name}: radars ${b.dataset.r === "on" ? "active" : "passive (EMCON)"}`, "info");
+  } else if (b.dataset.doc) {
+    world.setDoctrine(PLAYER, b.dataset.doc, b.dataset.v || null, o);
+    if (b.dataset.doc === "emcon") {
+      world.log(PLAYER, `${o.name}: radars ${world.doc(o, "emcon") === "passive" ? "passive (EMCON)" : "active"}`, "info");
+    }
   } else if (b.id === "oGo") {
     o.order({ heading_deg: Number($("oCourse").value), speed_kts: Number($("oSpeed").value) });
   } else if (b.id === "oPlot") {
@@ -658,6 +712,30 @@ function lossesReport() {
 }
 $("modalClose").onclick = () => ($("modal").hidden = true);
 
+/** Side-wide doctrine for the player's side. */
+function doctrineWindow() {
+  const d = world.doctrine[PLAYER];
+  const row = (key, label, values, help) => `
+    <div class="emcon"><span>${label}</span><div class="seg">${values
+      .map((v) => `<button data-sdoc="${key}" data-v="${v}" class="${d[key] === v ? "on" : ""}">${v[0].toUpperCase() + v.slice(1)}</button>`).join("")}</div></div>
+    <div class="meta" style="margin:-6px 0 12px">${help}</div>`;
+  $("modalTitle").textContent = "Doctrine (your side)";
+  $("modalBody").innerHTML = `
+    ${row("air", "Air", ["free", "tight", "hold"], "Engage aircraft: Free any, Tight only identified, Hold never. Inbound missiles are always engaged.")}
+    ${row("surface", "Surface", ["free", "tight", "hold"], "Free and Tight: your ships fire anti-ship missiles and guns at enemy ships on their own (Tight: identified only). Hold: only when you order it.")}
+    ${row("emcon", "Radar", ["active", "passive"], "Passive: all your ships' radars off. They can't be found by enemy ESM, but can only see with lookouts and ESM.")}
+    <div class="meta">Individual units can override these in their Doctrine section.</div>`;
+  $("modal").hidden = false;
+}
+$("modalBody").addEventListener("click", (ev) => {
+  const b = ev.target.closest("button[data-sdoc]");
+  if (!b) return;
+  world.setDoctrine(PLAYER, b.dataset.sdoc, b.dataset.v);
+  world.log(PLAYER, `Doctrine: ${b.dataset.sdoc} ${b.dataset.v}`, "info");
+  doctrineWindow();
+  statusKey = "";
+});
+
 // ------------------------------------------------------------------ toolbar, keys, loop
 
 let timeScale = 15;
@@ -677,6 +755,7 @@ $("tRings").onclick = () => {
   $("tRings").classList.toggle("on", showRings);
 };
 $("tLosses").onclick = lossesReport;
+$("tDoctrine").onclick = doctrineWindow;
 $("tLog").onclick = () => {
   const el = $("msglog");
   el.hidden = !el.hidden;
@@ -695,6 +774,7 @@ document.addEventListener("keydown", (ev) => {
   } else if (k === "p") setPlotting(!plotting);
   else if (k === "r") $("tRings").click();
   else if (k === "l") lossesReport();
+  else if (k === "d") doctrineWindow();
   else if (k === "m") $("tLog").click();
   else if (k === " ") {
     ev.preventDefault();

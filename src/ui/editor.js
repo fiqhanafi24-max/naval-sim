@@ -422,6 +422,10 @@ function renderSettings() {
     <label class="field inline"><input id="sRedFree" type="checkbox"> Attacks your ships when in range</label>
     <label class="field">Missiles per ship in a salvo<input id="sRedSalvo" type="number" min="1" max="16"></label>
     <label class="field inline"><input id="sRedDefend" type="checkbox"> Red defends itself (SAMs)</label>
+    <div class="two">
+      <label class="field">Red radars<select id="sRedEmcon"><option value="active">Active</option><option value="passive">Passive (EMCON)</option></select></label>
+      <label class="field">Your radars at start<select id="sBlueEmcon"><option value="active">Active</option><option value="passive">Passive (EMCON)</option></select></label>
+    </div>
     <label class="field inline"><input id="sBlueDefend" type="checkbox"> Your ships defend themselves automatically</label>
     <hr>
     <div class="field">Fly the globe to where the action should start, then
@@ -442,6 +446,9 @@ function renderSettings() {
   bind("sRedFree", () => scenario.ai.red.weaponsFree, (v) => (scenario.ai.red.weaponsFree = v));
   bind("sRedSalvo", () => scenario.ai.red.salvo ?? 4, (v) => (scenario.ai.red.salvo = Math.max(1, v)), num);
   bind("sRedDefend", () => scenario.ai.red.autoDefend !== false, (v) => (scenario.ai.red.autoDefend = v));
+  const docOf = (side) => ((scenario.doctrine ||= {})[side] ||= {});
+  bind("sRedEmcon", () => scenario.doctrine?.red?.emcon ?? "active", (v) => (docOf("red").emcon = v));
+  bind("sBlueEmcon", () => scenario.doctrine?.blue?.emcon ?? "active", (v) => (docOf("blue").emcon = v));
   bind("sBlueDefend", () => scenario.ai.blue.autoDefend !== false, (v) => (scenario.ai.blue.autoDefend = v));
   $("sCamera").onclick = () => {
     captureCamera();
