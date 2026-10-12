@@ -411,14 +411,14 @@ function renderInfoBar() {
   // local time from the selected unit's longitude (15° per hour), else the camera's
   const lon = sel ? sel.lon / DEG : viewer.camera.positionCartographic.longitude / DEG;
   const local = new Date(now.getTime() + Math.round(lon / 15) * 3600e3);
-  const date = now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+  const date = now.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   let togo = "";
   if (scenario.endAt_s) {
     const left = Math.max(0, scenario.endAt_s - world.t);
-    togo = ` · ${Math.floor(left / 3600)} hr ${Math.floor((left % 3600) / 60)} min to go`;
+    togo = ` · ${Math.floor(left / 3600)}h ${Math.floor((left % 3600) / 60)}m to go`;
   }
   const alt = viewer.camera.positionCartographic.height;
-  $("timeLine").textContent = `${date} · Zulu ${hms(now)} · Local ${hms(local)}${togo} · Camera ${alt > 10000 ? `${(alt / 1000).toFixed(0)} km` : `${alt.toFixed(0)} m`}`;
+  $("timeLine").textContent = `${date} · ${hms(now)}Z · Local ${hms(local)}${togo} · Cam ${alt > 10000 ? `${(alt / 1000).toFixed(0)} km` : `${alt.toFixed(0)} m`}`;
 }
 
 /** Left: order of battle (own ships and aircraft). */
