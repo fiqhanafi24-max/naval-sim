@@ -13,6 +13,7 @@ import { World, ammoLeft } from "../src/sim/world.js";
 import { Missile } from "../src/sim/missile.js";
 import { DEG, offset, range3D_m } from "../src/sim/geo.js";
 import { blastOverpressure, damageFactor } from "../src/sim/damage.js";
+import { buildShipGltf, buildAircraftGltf, buildMissileGltf } from "../src/ui/models.js";
 
 const [data, atmo, scenario] = await Promise.all([
   fetch("../data/gcb-units.json").then((r) => r.json()),
@@ -135,7 +136,7 @@ function check(name, ok, detail = "") {
 
 // 3d. Gun duel: Burke and Sovremenny 15 km apart, missiles emptied
 {
-  const w = new World(data, atmo, { seed: 400, units: [
+  const w = new World(data, atmo, { seed: 400, doctrine: { blue: { surface: "free" }, red: { surface: "free" } }, units: [
     { side: "blue", class: "Arleigh Burke DDGHM", lat_deg: 60, lon_deg: 0, heading_deg: 90, speed_kts: 10 },
     { side: "red", class: "Pr 956 Sarych", lat_deg: 60 + 15 / 111.2, lon_deg: 0, heading_deg: 270, speed_kts: 10 },
   ] });
@@ -229,7 +230,25 @@ check("Damage table interpolates", Math.abs(damageFactor([[0, 0], [10, 1]], 5) -
     `${Object.keys(data.ships).length} ships, ${Object.keys(data.aircraft).length} aircraft${failures.length ? "; failures: " + failures.slice(0, 8).join(" | ") : ""}`);
 }
 
-// 6c. Brunei: Darussalam OPV fires its Exocet MM40 Block 3 at a ship 80 km away
+// 6c. 3D models: every ship, aircraft and missile in the catalogue gets a valid glTF
+{
+  const bad = [];
+  let n = 0, bytes = 0;
+  const valid = (name, uri) => {
+    n++;
+    bytes += uri.length;
+    const g = JSON.parse(atob(uri.split(",")[1]));
+    const finite = g.accessors.every((a) => !a.min || [...a.min, ...a.max].every(Number.isFinite));
+    if (!finite || !g.meshes[0].primitives.length) bad.push(name);
+  };
+  for (const [k, s] of Object.entries(data.ships)) valid(k, buildShipGltf(s, s.country === "USA" ? "us" : "soviet"));
+  for (const [k, a] of Object.entries(data.aircraft)) valid(k, buildAircraftGltf(a));
+  for (const [k, m] of Object.entries(data.missiles)) valid(k, buildMissileGltf(m));
+  check("Every catalogue ship, aircraft and missile has a 3D model", bad.length === 0,
+    `${n} models, average ${(bytes / n / 1024).toFixed(0)} KB${bad.length ? "; bad: " + bad.slice(0, 8).join(", ") : ""}`);
+}
+
+// 6d. Brunei: Darussalam OPV fires its Exocet MM40 Block 3 at a ship 80 km away
 {
   const w = new World(data, atmo, { seed: 11, ai: { red: { autoDefend: false, guns: false } }, units: [
     { side: "blue", class: "Darussalam OPV", name: "KDB Darussalam", lat_deg: 5.0, lon_deg: 114.0, heading_deg: 0, speed_kts: 12 },
@@ -243,7 +262,7 @@ check("Damage table interpolates", Math.abs(damageFactor([[0, 0], [10, 1]], 5) -
   check("Brunei: Darussalam OPV fires Exocet MM40 Block 3", fired.length > 0, `${fired.join("; ") || "no launch"}; target damage ${(r.damage * 100).toFixed(0)}%`);
 }
 
-// 6d. Contacts: designated on detection, identified by lookouts inside visual range only
+// 6e. Contacts: designated on detection, identified by lookouts inside visual range only
 {
   const idAt = (km) => {
     const w = new World(data, atmo, { seed: 21, ai: { blue: { guns: false }, red: { guns: false } }, units: [
@@ -256,10 +275,10 @@ check("Damage table interpolates", Math.abs(damageFactor([[0, 0], [10, 1]], 5) -
   };
   const near = idAt(12), far = idAt(28);
   check("Contacts: lookouts identify a ship at 12 km", /^SKUNK #1 \(Pr 956 Sarych\) \[identified\]$/.test(near), near);
-  check("Contacts: radar alone at 28 km detects but doesn't identify", /^SKUNK #1 \(Surface contact\)$/.test(far), far);
+  check("Contacts: radar alone at 28 km detects but doesn't identify", /^SKUNK #1 \(Surface contact( \[[^\]]+\])?\)$/.test(far), far);
 }
 
-// 6e. Plotted course and throttle preset
+// 6f. Plotted course and throttle preset
 {
   const w = new World(data, atmo, { seed: 22, units: [
     { side: "blue", class: "Arleigh Burke DDGHM", lat_deg: 60, lon_deg: 0, heading_deg: 0, speed_kts: 0 },
@@ -272,7 +291,7 @@ check("Damage table interpolates", Math.abs(damageFactor([[0, 0], [10, 1]], 5) -
     `waypoints left ${b.route.length}, goal speed ${b.goalSpeed_kts} kts, t=${(w.t / 60).toFixed(1)} min`);
 }
 
-// 6f. ESM: hear a radar beyond radar range; EMCON passive hides it; two bearings cross-fix
+// 6g. ESM: hear a radar beyond radar range; EMCON passive hides it; two bearings cross-fix
 {
   const esmRun = (emcon, reds) => {
     const w = new World(data, atmo, { seed: 31, ai: { blue: { guns: false }, red: { guns: false } },
@@ -300,7 +319,7 @@ check("Damage table interpolates", Math.abs(damageFactor([[0, 0], [10, 1]], 5) -
     f.tr ? `${f.w.trackName(f.tr)}, source ${f.tr.source}${miss != null ? `, fix ${(miss / 1000).toFixed(1)} km off, ±${(f.tr.error_m / 1000).toFixed(1)} km` : ""}` : "no track");
 }
 
-// 6g. Doctrine: Air Hold stops SAMs engaging an aircraft overhead
+// 6h. Doctrine: Air Hold stops SAMs engaging an aircraft overhead
 {
   const run = (air) => {
     const w = new World(data, atmo, { seed: 500, doctrine: { blue: { air } }, units: [

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Model Gallery</title>
+<script>window.CESIUM_BASE_URL = "https://cdn.jsdelivr.net/npm/cesium@1.119.0/Build/Cesium/";</script>
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.119.0/Build/Cesium/Cesium.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.119.0/Build/Cesium/Widgets/widgets.css">
+<link rel="stylesheet" href="src/ui/style.css">
+<style>
+  #catalog { top: 64px; left: 10px; width: 320px; bottom: 10px; display: flex; flex-direction: column; padding: 10px; }
+  #catalog .row { display: flex; gap: 6px; margin-bottom: 8px; }
+  #catalog input[type=search] { flex: 1; background: #0c1828; color: var(--text); border: 1px solid var(--line); border-radius: 5px; padding: 6px 7px; font: 13px var(--font); }
+  #results { flex: 1; overflow: auto; border-top: 1px solid var(--line); padding-top: 6px; }
+  .cat-item { padding: 6px 8px; border-radius: 6px; cursor: pointer; border: 1px solid transparent; }
+  .cat-item:hover { background: #13243a; }
+  .cat-item.sel { border-color: var(--amber); background: #2a2210; }
+  .cat-item .n { font-weight: 600; }
+  .cat-item .m { color: var(--muted); font-size: 11px; font-family: var(--mono); }
+  #info { top: 64px; right: 10px; width: 300px; padding: 12px; font-size: 13px; }
+  #info dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; margin: 8px 0 0; }
+  #info dt { color: var(--muted); }
+  #info dd { margin: 0; font-family: var(--mono); }
+  @media (max-width: 900px) {
+    #catalog { width: calc(100% - 20px); bottom: auto; height: 40%; }
+    #info { width: calc(100% - 20px); top: auto; bottom: 10px; }
+  }
+</style>
+</head>
+<body>
+<div id="globe"></div>
+<div id="topbar" class="panel">
+  <h1>Model gallery</h1>
+  <div class="seg" id="kind">
+    <button data-k="ships" class="on">Ships</button>
+    <button data-k="aircraft">Aircraft</button>
+    <button data-k="missiles">Missiles</button>
+  </div>
+  <div class="spacer"></div>
+  <label class="toggle"><input type="checkbox" id="spin" checked> Rotate</label>
+  <a class="btn" href="editor.html">Editor</a>
+  <a class="btn" href="index.html">Play</a>
+</div>
+<div id="catalog" class="panel">
+  <div class="row"><input type="search" id="q" placeholder="Search name or country" aria-label="Search"></div>
+  <div id="results"></div>
+</div>
+<div id="info" class="panel"></div>
+<script type="module" src="src/ui/gallery.js"></script>
+</body>
+</html>

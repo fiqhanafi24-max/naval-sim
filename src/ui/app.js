@@ -4,7 +4,7 @@
 import { World, isAntiShip, ammoLeft } from "../sim/world.js";
 import { predict } from "../sim/missile.js";
 import { DEG, bearing, groundRange_m } from "../sim/geo.js";
-import { buildShipGltf } from "./models.js";
+import { buildAircraftGltf, buildMissileGltf, buildShipGltf } from "./models.js";
 import { Effects } from "./effects.js";
 import { COLORS, PLAYER, SYMBOLS, createViewer, listScenarios, loadScenario } from "./common.js";
 
@@ -67,6 +67,30 @@ function shipModel(className) {
     modelUris.set(className, db ? buildShipGltf(db, db.country === "USA" ? "us" : "soviet") : null);
   }
   return modelUris.get(className);
+}
+function cachedModel(key, build) {
+  if (!modelUris.has(key)) modelUris.set(key, build());
+  return modelUris.get(key);
+}
+const aircraftModel = (cls) => cachedModel(`air:${cls}`, () => (data.aircraft[cls] ? buildAircraftGltf(data.aircraft[cls]) : null));
+const missileModel = (cls) => cachedModel(`msl:${cls}`, () => (data.missiles[cls] ? buildMissileGltf(data.missiles[cls]) : null));
+
+// aircraft and missiles are tiny at map scale: within MODEL_RANGE_M of the camera they are
+// drawn as 3D models (never smaller than a few pixels); further out as NTDS symbols
+const MODEL_RANGE_M = 60000;
+const NEAR_MODEL = new Cesium.DistanceDisplayCondition(0, MODEL_RANGE_M);
+const FAR_SYMBOL = new Cesium.DistanceDisplayCondition(MODEL_RANGE_M, Number.MAX_VALUE);
+
+/** Show a model for an air object, oriented by heading and pitch; symbol only when it is far away or unidentified. */
+function airModel(e, o, uri, show, minPx) {
+  if (uri && !e.model) e.model = { uri, minimumPixelSize: minPx, shadows: Cesium.ShadowMode.DISABLED, distanceDisplayCondition: NEAR_MODEL };
+  if (!e.model) return;
+  if (e._modelShown !== show) {
+    e._modelShown = show;
+    e.model.show = show;
+    e.billboard.distanceDisplayCondition = show ? FAR_SYMBOL : undefined;
+  }
+  if (show) e.orientation = Cesium.Transforms.headingPitchRollQuaternion(pos(o), new Cesium.HeadingPitchRoll(o.heading - Math.PI / 2, o.pitch || 0, 0));
 }
 
 const SINK_S = 150; // sim seconds for a sunk ship to settle and disappear
@@ -135,6 +159,7 @@ function missileEntity(key, o, side) {
   }));
   e.position = pos(o);
   if (o.trail) setLine(e, [...o.trail.map((p) => pos(p)), pos(o)]);
+  airModel(e, o, missileModel(o.className || o.db?.name), true, 20);
   e._objId = o.id;
   return e;
 }
@@ -151,6 +176,8 @@ function airEntity(key, o, side, isTrack) {
   }));
   e.position = pos(o);
   e.label.text = `${isTrack ? world.trackName(o) : o.name}  FL${String(Math.round(o.alt / 30.48)).padStart(3, "0")}`;
+  // hostile aircraft show their airframe only once identified
+  airModel(e, o, aircraftModel(o.className || o.db?.name), !isTrack || !!o.identified, 32);
   e._objId = o.id;
   return e;
 }

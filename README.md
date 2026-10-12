@@ -54,7 +54,8 @@ Ported from GCB2, with deviations noted at the top of each source file:
 | `src/sim/aircraft.js` | Patrol and strike aircraft |
 | `src/sim/world.js` | Tracks, launches, detonations, computer opponent |
 | `src/ui/app.js` | CesiumJS globe and control panels |
-| `src/ui/models.js`, `src/ui/effects.js` | Generated ship models, explosions, smoke |
+| `src/ui/models.js`, `src/ui/effects.js` | Generated 3D models (ships, aircraft, missiles), explosions, smoke |
+| `models.html`, `src/ui/gallery.js` | Model gallery: every catalogue unit's 3D model |
 | `data/gcb-units.json` | Unit data exported from the GCB2 database |
 | `scenarios/` | Scenario files |
 | `tools/export_gcb_db.py` | Re-exports unit data from GCB2's `database.db` |

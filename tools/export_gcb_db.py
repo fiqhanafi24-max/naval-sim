@@ -400,6 +400,24 @@ def setup_loadout(db, setup):
             for r in rows(db, "select * from launcher_loadout where DatabaseClass=?", setup["LauncherLoadout"])}
 
 
+AUXILIARY_WORDS = ("AOR", "AOE", "AO ", "T-AO", "Tanker", "Oiler", "Supply", "Replenishment", "Cargo", "Container",
+                   "Merchant", "Ferry", "Tug", "Trawler", "LST", "LSD", "LPD", "Transport", "Hospital", "Survey")
+FLATTOP_WORDS = ("LHD", "LHA", "LPH", "Wasp", "Tarawa", "America", "Mistral", "Juan Carlos", "Ocean")
+
+
+def ship_type(cls, classification, length_m):
+    """Model layout for a ship class: carrier, flattop (amphibious), auxiliary, small or combatant."""
+    if any(w in cls for w in FLATTOP_WORDS):
+        return "flattop"
+    if classification == 22 and length_m >= 170:
+        return "carrier"
+    if any(w in cls for w in AUXILIARY_WORDS):
+        return "auxiliary"
+    if length_m < 60:
+        return "small"
+    return "combatant"
+
+
 def export_ship(db, data, cls, setup_name):
     s = one(db, "select * from ship where DatabaseClass=?", cls)
     setup = one(db, "select * from platform_setup where DatabaseClass=? and SetupName=?", cls, setup_name)
@@ -422,6 +440,7 @@ def export_ship(db, data, cls, setup_name):
     export_damage_effect(db, s["DamageEffect"], data)
     data["ships"][cls] = {
         "name": cls, "country": s["Country"], "setup": setup_name, "year": int(num(setup["InitialYear"])),
+        "shipType": ship_type(cls, int(num(s["ClassificationId"])), num(s["Length_m"])),
         "maxSpeed_kts": num(s["MaxSpeed_kts"]), "accel_ktsps": num(s["Accel_ktsps"], 0.5),
         "turnRate_degps": num(s["TurnRate_degps"], 3),
         "length_m": num(s["Length_m"]), "beam_m": num(s["Beam_m"]), "draft_m": num(s["Draft_m"]),
@@ -452,6 +471,8 @@ def export_aircraft(db, data, cls, table, setup_name):
     data["aircraft"][cls] = {
         "name": cls, "country": a["Country"], "setup": setup_name, "year": year,
         "role": "strike" if launchers else "patrol",
+        "airframe": airframe(cls, table, int(num(a["ClassificationId"])), num(a["MaxTakeoffWeight_kg"])),
+        "mtow_kg": num(a["MaxTakeoffWeight_kg"]),
         "maxSpeed_kts": max_kts,
         # GCB2 jets fly an aero model; we use a fixed cruise speed instead
         "cruiseSpeed_kts": round(max_kts * (0.55 if table == "air" else 0.8)),
@@ -464,6 +485,28 @@ def export_aircraft(db, data, cls, table, setup_name):
         "damageEffect": a["DamageEffect"],
         "sensors": sensors, "launchers": launchers,
     }
+
+
+# simpleair holds some jets: give them jet airframes rather than turboprops
+HEAVY_JETS = ("B-2", "B-52", "E-3", "E-737", "Nimrod", "P-8", "Sentinel", "H-6D", "Tu-16")
+SMALL_JETS = ("ES-3", "S-3", "KS-3")
+
+
+def airframe(name, table, classification, mtow_kg):
+    """Model layout for an aircraft: helo, prop (turboprop / piston), jet, or heavy (bomber/transport jet)."""
+    if classification == 34:
+        return "helo"
+    if name.startswith(("F-111", "EF-111")):  # GCB2 lists F-111 MTOW as 216 t
+        return "jet"
+    if name.startswith(("Tu-95", "Tu-142")):  # turboprops in the jet table
+        return "prop"
+    if name.startswith(HEAVY_JETS):
+        return "heavy"
+    if name.startswith(SMALL_JETS):
+        return "jet"
+    if table == "simpleair":
+        return "prop"
+    return "heavy" if mtow_kg >= 60000 else "jet"
 
 
 def latest_setup(db, cls):
@@ -522,6 +565,7 @@ def export_custom_ship(db, data, cls, spec):
     hull = spec["hull"]
     data["ships"][cls] = {
         "name": cls, "country": spec["country"], "setup": "custom", "year": spec["year"], "note": spec["note"],
+        "shipType": ship_type(cls, 17, hull["length_m"]),
         "maxSpeed_kts": hull["maxSpeed_kts"], "accel_ktsps": num(base["Accel_ktsps"], 0.5),
         "turnRate_degps": num(base["TurnRate_degps"], 3),
         "length_m": hull["length_m"], "beam_m": hull["beam_m"], "draft_m": hull["draft_m"],
