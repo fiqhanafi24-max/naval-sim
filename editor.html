@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scenario Editor</title>
+<script>window.CESIUM_BASE_URL = "https://cdn.jsdelivr.net/npm/cesium@1.119.0/Build/Cesium/";</script>
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.119.0/Build/Cesium/Cesium.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.119.0/Build/Cesium/Widgets/widgets.css">
+<link rel="stylesheet" href="src/ui/style.css">
+<style>
+  #catalog { top: 64px; left: 10px; width: 320px; bottom: 10px; display: flex; flex-direction: column; padding: 10px; }
+  #catalog .row { display: flex; gap: 6px; margin-bottom: 8px; }
+  #catalog input[type=search] { flex: 1; }
+  #results { flex: 1; overflow: auto; border-top: 1px solid var(--line); padding-top: 6px; }
+  .cat-item { padding: 6px 8px; border-radius: 6px; cursor: pointer; border: 1px solid transparent; }
+  .cat-item:hover { background: #13243a; }
+  .cat-item.sel { border-color: var(--amber); background: #2a2210; }
+  .cat-item .n { font-weight: 600; }
+  .cat-item .m { color: var(--muted); font-size: 11px; font-family: var(--mono); }
+  #inspector { top: 64px; right: 10px; width: 340px; max-height: calc(100% - 300px); overflow: auto; padding: 12px; }
+  #placed { bottom: 10px; right: 10px; width: 340px; height: 210px; overflow: auto; padding: 8px 10px; }
+  .field { display: flex; flex-direction: column; gap: 3px; margin-bottom: 9px; font-size: 12px; color: var(--muted); }
+  .field.inline { flex-direction: row; align-items: center; gap: 8px; }
+  input, textarea, select { background: #0c1828; color: var(--text); border: 1px solid var(--line); border-radius: 5px; padding: 6px 7px; font: 13px var(--font); }
+  textarea { min-height: 70px; resize: vertical; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .side-blue { color: var(--blue); }
+  .side-red { color: var(--red); }
+  .placed-item { display: flex; justify-content: space-between; gap: 8px; padding: 4px 6px; border-radius: 5px; cursor: pointer; font-size: 12px; }
+  .placed-item:hover, .placed-item.sel { background: #13243a; }
+  #hint { position: absolute; top: 64px; left: 50%; transform: translateX(-50%); padding: 7px 14px; color: var(--amber); display: none; z-index: 4; }
+  #topbar input#scName { width: 260px; }
+  .seg button.blue.on { background: var(--blue); }
+  .seg button.red.on { background: var(--red); color: #200; }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 12px 0; }
+  .danger { background: #3a1716; border-color: #6b2622; color: #ffd6d3; }
+  @media (max-width: 900px) {
+    #catalog { width: calc(100% - 20px); bottom: auto; height: 40%; }
+    #inspector { width: calc(100% - 20px); top: auto; bottom: 230px; max-height: 30%; }
+    #placed { width: calc(100% - 20px); height: 200px; }
+  }
+</style>
+</head>
+<body>
+<div id="globe"></div>
+
+<div id="topbar" class="panel">
+  <h1>Scenario editor</h1>
+  <input id="scName" aria-label="Scenario name" placeholder="Scenario name">
+  <select id="openPick" aria-label="Open scenario"><option value="">Open…</option></select>
+  <button id="newBtn">New</button>
+  <button id="loadBtn">Load file</button>
+  <input id="loadFile" type="file" accept=".json,application/json" hidden>
+  <div class="spacer"></div>
+  <button id="saveBtn">Save</button>
+  <button id="downloadBtn">Download</button>
+  <button id="playBtn" class="on">Play</button>
+</div>
+
+<div id="catalog" class="panel">
+  <h2>Add units</h2>
+  <div class="row">
+    <div class="seg" id="sidePick">
+      <button data-side="blue" class="blue on">Blue (you)</button>
+      <button data-side="red" class="red">Red</button>
+    </div>
+    <div class="seg" id="kindPick">
+      <button data-kind="ship" class="on">Ships</button>
+      <button data-kind="patrol">Patrol air</button>
+      <button data-kind="strike">Strike air</button>
+    </div>
+  </div>
+  <div class="row"><input id="search" type="search" placeholder="Search name, country or year…" aria-label="Search units"></div>
+  <div id="results"></div>
+</div>
+
+<div id="hint" class="panel"></div>
+<div id="inspector" class="panel"></div>
+<div id="placed" class="panel"><h2>In this scenario</h2><div id="placedList"></div></div>
+
+<script type="module" src="src/ui/editor.js"></script>
+</body>
+</html>

@@ -6,8 +6,8 @@ import { predict } from "../sim/missile.js";
 import { DEG, bearing, groundRange_m } from "../sim/geo.js";
 import { buildShipGltf } from "./models.js";
 import { Effects } from "./effects.js";
+import { COLORS, PLAYER, SYMBOLS, createViewer, listScenarios, loadScenario } from "./common.js";
 
-const PLAYER = "blue";
 const SIM_DT = 0.1;
 const MAX_STEPS_PER_FRAME = 1200;
 
@@ -17,77 +17,14 @@ const scenarioName = params.get("scenario") || "norwegian-sea";
 const [data, atmo, scenario] = await Promise.all([
   fetch("data/gcb-units.json").then((r) => r.json()),
   fetch("data/atmosphere.csv").then((r) => r.text()),
-  fetch(`scenarios/${scenarioName}.json`).then((r) => r.json()),
+  loadScenario(scenarioName),
 ]);
 
 const world = new World(data, atmo, scenario);
 
 // ------------------------------------------------------------------ globe
 
-const viewer = new Cesium.Viewer("globe", {
-  baseLayer: Cesium.ImageryLayer.fromProviderAsync(
-    Cesium.TileMapServiceImageryProvider.fromUrl(Cesium.buildModuleUrl("Assets/Textures/NaturalEarthII")),
-  ),
-  baseLayerPicker: false,
-  geocoder: false,
-  homeButton: false,
-  sceneModePicker: false,
-  navigationHelpButton: false,
-  animation: false,
-  timeline: false,
-  fullscreenButton: false,
-  infoBox: false,
-  selectionIndicator: false,
-});
-viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString("#0b2a4a");
-viewer.scene.globe.showGroundAtmosphere = true;
-
-const cam = scenario.camera || {};
-viewer.camera.setView({
-  destination: Cesium.Cartesian3.fromDegrees(cam.lon_deg ?? 0, cam.lat_deg ?? 0, cam.alt_m ?? 200000),
-  orientation: { heading: 0, pitch: (cam.pitch_deg ?? -60) * DEG, roll: 0 },
-});
-
-const COLORS = {
-  blue: Cesium.Color.fromCssColorString("#4da3ff"),
-  red: Cesium.Color.fromCssColorString("#ff5a52"),
-  amber: Cesium.Color.fromCssColorString("#ffb547"),
-  white: Cesium.Color.WHITE,
-};
-
-/**
- * NTDS-style symbols drawn on canvas. Friendly: circle (ship), square (missile), upper
- * semicircle (aircraft). Hostile: diamond (ship, missile), upper chevron (aircraft).
- */
-function symbol(side, kind) {
-  const c = document.createElement("canvas");
-  const s = kind === "ship" ? 28 : kind === "aircraft" ? 22 : 16;
-  c.width = c.height = s;
-  const g = c.getContext("2d");
-  g.lineWidth = kind === "missile" ? 2 : 2.5;
-  g.strokeStyle = side === PLAYER ? "#4da3ff" : "#ff5a52";
-  g.fillStyle = side === PLAYER ? "rgba(77,163,255,0.25)" : "rgba(255,90,82,0.25)";
-  g.beginPath();
-  const m = s / 2;
-  const r = s / 2 - 3;
-  if (kind === "aircraft") {
-    if (side === PLAYER) g.arc(m, m + r / 2, r, Math.PI, 0);
-    else { g.moveTo(m - r, m + r / 2); g.lineTo(m, m - r / 2); g.lineTo(m + r, m + r / 2); }
-    g.stroke();
-    return c;
-  }
-  if (side === PLAYER) {
-    if (kind === "ship") g.arc(m, m, r, 0, Math.PI * 2);
-    else g.rect(m - r, m - r, 2 * r, 2 * r);
-  } else {
-    g.moveTo(m, m - r); g.lineTo(m + r, m); g.lineTo(m, m + r); g.lineTo(m - r, m); g.closePath();
-  }
-  g.fill();
-  g.stroke();
-  return c;
-}
-const SYMBOLS = {};
-for (const side of ["blue", "red"]) for (const kind of ["ship", "missile", "aircraft"]) SYMBOLS[`${side}-${kind}`] = symbol(side, kind);
+const viewer = createViewer("globe", scenario.camera);
 
 const pos = (o, extra = 0) => Cesium.Cartesian3.fromRadians(o.lon, o.lat, Math.max(o.alt || 0, 0) + extra);
 
@@ -532,20 +469,16 @@ $("start").onclick = () => {
   running = true;
 };
 
-// scenario picker: reload the page with ?scenario=<id>
-fetch("scenarios/index.json")
-  .then((r) => r.json())
-  .then((list) => {
-    $("scenarioPick").innerHTML = list
-      .map((s) => `<option value="${s.id}" ${s.id === scenarioName ? "selected" : ""}>${s.name}</option>`)
-      .join("");
-    $("scenarioPick").onchange = (ev) => {
-      location.search = `?scenario=${encodeURIComponent(ev.target.value)}`;
-    };
-  })
-  .catch(() => {
-    $("scenarioPick").style.display = "none";
-  });
+// scenario picker (built-in and saved in this browser): reload with ?scenario=<id>
+listScenarios().then((list) => {
+  $("scenarioPick").innerHTML = list
+    .map((s) => `<option value="${s.id}" ${s.id === scenarioName ? "selected" : ""}>${s.name}</option>`)
+    .join("");
+  $("scenarioPick").onchange = (ev) => {
+    location.search = `?scenario=${encodeURIComponent(ev.target.value)}`;
+  };
+});
+$("editLink").href = `editor.html?scenario=${encodeURIComponent(scenarioName)}`;
 
 let last = performance.now();
 let acc = 0;

@@ -343,6 +343,105 @@ def export_fit(db, cls, loadout, data, keep=None):
     return sensors, launchers
 
 
+def setup_loadout(db, setup):
+    return {str(r["LauncherId"]): [(r["Item"], int(r["Quantity"]))]
+            for r in rows(db, "select * from launcher_loadout where DatabaseClass=?", setup["LauncherLoadout"])}
+
+
+def export_ship(db, data, cls, setup_name):
+    s = one(db, "select * from ship where DatabaseClass=?", cls)
+    setup = one(db, "select * from platform_setup where DatabaseClass=? and SetupName=?", cls, setup_name)
+    loadout = setup_loadout(db, setup)
+    loadout.update(MAGAZINE_OVERRIDES.get(cls, {}))
+
+    sensors, launchers = export_fit(db, cls, loadout, data)
+
+    # ammunition below decks, used to reload launchers and gun mounts; skipped for
+    # launchers whose totals are set in MAGAZINE_OVERRIDES so nothing is counted twice
+    overridden = set(MAGAZINE_OVERRIDES.get(cls, {}))
+    reload_items = {l["item"] for l in launchers if str(l["id"]) not in overridden}
+    magazine = {}
+    for r in rows(db, "select * from magazine_loadout where DatabaseClass=?", setup["MagazineLoadout"]):
+        if r["Item"] in reload_items:
+            magazine[r["Item"]] = magazine.get(r["Item"], 0) + int(num(r["Quantity"]))
+
+    export_signature(db, s["RCS_Model"], data["signatures"])
+    export_signature(db, s["IR_ModelA"], data["signatures"])
+    export_damage_effect(db, s["DamageEffect"], data)
+    data["ships"][cls] = {
+        "name": cls, "country": s["Country"], "setup": setup_name, "year": int(num(setup["InitialYear"])),
+        "maxSpeed_kts": num(s["MaxSpeed_kts"]), "accel_ktsps": num(s["Accel_ktsps"], 0.5),
+        "turnRate_degps": num(s["TurnRate_degps"], 3),
+        "length_m": num(s["Length_m"]), "beam_m": num(s["Beam_m"]), "draft_m": num(s["Draft_m"]),
+        "rcs_dBsm": num(s["RCS_dBsm"]), "rcsModel": s["RCS_Model"] or None, **ir_fields(s),
+        "effectiveHeight_m": num(s["EffectiveHeight_m"]),
+        "damageEffect": s["DamageEffect"],
+        "sensors": sensors, "launchers": launchers, "magazine": magazine,
+    }
+
+
+def export_aircraft(db, data, cls, table, setup_name):
+    a = one(db, "select * from %s where DatabaseClass=?" % table, cls)
+    loadout = {}
+    year = None
+    if setup_name:
+        setup = one(db, "select * from platform_setup where DatabaseClass=? and SetupName=?", cls, setup_name)
+        loadout = setup_loadout(db, setup)
+        year = int(num(setup["InitialYear"]))
+    loadout.update(AIRCRAFT_LOADOUTS.get(cls, {}))
+    # anti-ship missiles only: air-to-air weapons and aircraft guns aren't ported yet
+    sensors, launchers = export_fit(
+        db, cls, loadout, data,
+        keep=lambda kind, item: kind == "missile" and data["missiles"][item]["targetFlags"] == 1)
+    export_signature(db, a["RCS_Model"], data["signatures"])
+    export_signature(db, a["IR_ModelA"], data["signatures"])
+    export_damage_effect(db, a["DamageEffect"], data)
+    max_kts = num(a["MaxSpeed_kts"])
+    data["aircraft"][cls] = {
+        "name": cls, "country": a["Country"], "setup": setup_name, "year": year,
+        "role": "strike" if launchers else "patrol",
+        "maxSpeed_kts": max_kts,
+        # GCB2 jets fly an aero model; we use a fixed cruise speed instead
+        "cruiseSpeed_kts": round(max_kts * (0.55 if table == "air" else 0.8)),
+        "accel_ktsps": num(a["Accel_ktsps"], 5), "turnRate_degps": num(a["TurnRate_degps"], 5),
+        "maxAlt_m": num(a["MaxAltitude_m"], 10000), "climbRate_mps": num(a["ClimbRate_mps"], 15),
+        "fuel_kg": num(a["FuelCapacity_kg"]), "fuelRate_kgps": num(a["FuelRate_kgps"]),
+        "rcs_dBsm": num(a["RCS_dBsm"]), "rcsModel": a["RCS_Model"] or None, **ir_fields(a),
+        "effectiveHeight_m": num(a["EffectiveHeight_m"]) or 3,
+        "length_m": 20,
+        "damageEffect": a["DamageEffect"],
+        "sensors": sensors, "launchers": launchers,
+    }
+
+
+def latest_setup(db, cls):
+    r = one(db, "select SetupName from platform_setup where DatabaseClass=? "
+                "order by InitialYear desc, SetupName desc limit 1", cls)
+    return r["SetupName"] if r else None
+
+
+def best_strike_setup(db, cls):
+    """The setup carrying the most anti-ship missiles (newest first on ties), or None."""
+    best, best_n = None, 0
+    for st in rows(db, "select * from platform_setup where DatabaseClass=? order by InitialYear desc", cls):
+        n = 0
+        for r in rows(db, "select * from launcher_loadout where DatabaseClass=?", st["LauncherLoadout"]):
+            m = one(db, "select targetFlags from missile where DatabaseClass=?", r["Item"])
+            if m and int(num(m["targetFlags"])) == 1:
+                n += int(num(r["Quantity"]))
+        if n > best_n:
+            best, best_n = st["SetupName"], n
+    return best
+
+
+def has_search_radar(db, cls):
+    for ps in rows(db, "select * from platform_sensor where DatabaseClass=?", cls):
+        r = one(db, "select DetectsSurface from radar where DatabaseClass=?", ps["SensorClass"])
+        if r and int(num(r["DetectsSurface"])):
+            return True
+    return False
+
+
 def main(db_path, out_path):
     db = sqlite3.connect(db_path)
     db.text_factory = lambda b: b.decode("utf-8", errors="replace")
@@ -350,73 +449,46 @@ def main(db_path, out_path):
             "ships": {}, "aircraft": {}, "radars": {}, "opticals": {}, "missiles": {}, "guns": {}, "warheads": {},
             "damageEffects": {}, "signatures": {}}
 
+    # hand-picked classes used by the built-in scenarios
     for cls, setup_name in SHIPS:
-        s = one(db, "select * from ship where DatabaseClass=?", cls)
-        setup = one(db, "select * from platform_setup where DatabaseClass=? and SetupName=?", cls, setup_name)
-        loadout = {str(r["LauncherId"]): [(r["Item"], int(r["Quantity"]))]
-                   for r in rows(db, "select * from launcher_loadout where DatabaseClass=?", setup["LauncherLoadout"])}
-        loadout.update(MAGAZINE_OVERRIDES.get(cls, {}))
-
-        sensors, launchers = export_fit(db, cls, loadout, data)
-
-        # ammunition below decks, used to reload launchers and gun mounts; skipped for
-        # launchers whose totals are set in MAGAZINE_OVERRIDES so nothing is counted twice
-        overridden = set(MAGAZINE_OVERRIDES.get(cls, {}))
-        reload_items = {l["item"] for l in launchers if str(l["id"]) not in overridden}
-        magazine = {}
-        for r in rows(db, "select * from magazine_loadout where DatabaseClass=?", setup["MagazineLoadout"]):
-            if r["Item"] in reload_items:
-                magazine[r["Item"]] = magazine.get(r["Item"], 0) + int(num(r["Quantity"]))
-
-        export_signature(db, s["RCS_Model"], data["signatures"])
-        export_signature(db, s["IR_ModelA"], data["signatures"])
-        export_damage_effect(db, s["DamageEffect"], data)
-        data["ships"][cls] = {
-            "name": cls, "country": s["Country"], "setup": setup_name,
-            "maxSpeed_kts": num(s["MaxSpeed_kts"]), "accel_ktsps": num(s["Accel_ktsps"], 0.5),
-            "turnRate_degps": num(s["TurnRate_degps"], 3),
-            "length_m": num(s["Length_m"]), "beam_m": num(s["Beam_m"]), "draft_m": num(s["Draft_m"]),
-            "rcs_dBsm": num(s["RCS_dBsm"]), "rcsModel": s["RCS_Model"] or None, **ir_fields(s),
-            "effectiveHeight_m": num(s["EffectiveHeight_m"]),
-            "damageEffect": s["DamageEffect"],
-            "sensors": sensors, "launchers": launchers, "magazine": magazine,
-        }
-
+        export_ship(db, data, cls, setup_name)
     for cls, table, setup_name in AIRCRAFT:
-        a = one(db, "select * from %s where DatabaseClass=?" % table, cls)
-        loadout = {}
-        if setup_name:
-            setup = one(db, "select * from platform_setup where DatabaseClass=? and SetupName=?", cls, setup_name)
-            loadout = {str(r["LauncherId"]): [(r["Item"], int(r["Quantity"]))]
-                       for r in rows(db, "select * from launcher_loadout where DatabaseClass=?", setup["LauncherLoadout"])}
-        loadout.update(AIRCRAFT_LOADOUTS.get(cls, {}))
-        # anti-ship missiles only: air-to-air weapons and aircraft guns aren't ported yet
-        sensors, launchers = export_fit(
-            db, cls, loadout, data,
-            keep=lambda kind, item: kind == "missile" and data["missiles"][item]["targetFlags"] == 1)
-        export_signature(db, a["RCS_Model"], data["signatures"])
-        export_signature(db, a["IR_ModelA"], data["signatures"])
-        export_damage_effect(db, a["DamageEffect"], data)
-        max_kts = num(a["MaxSpeed_kts"])
-        data["aircraft"][cls] = {
-            "name": cls, "country": a["Country"], "setup": setup_name,
-            "maxSpeed_kts": max_kts,
-            # GCB2 jets fly an aero model; we use a fixed cruise speed instead
-            "cruiseSpeed_kts": round(max_kts * (0.55 if table == "air" else 0.8)),
-            "accel_ktsps": num(a["Accel_ktsps"], 5), "turnRate_degps": num(a["TurnRate_degps"], 5),
-            "maxAlt_m": num(a["MaxAltitude_m"], 10000), "climbRate_mps": num(a["ClimbRate_mps"], 15),
-            "fuel_kg": num(a["FuelCapacity_kg"]), "fuelRate_kgps": num(a["FuelRate_kgps"]),
-            "rcs_dBsm": num(a["RCS_dBsm"]), "rcsModel": a["RCS_Model"] or None, **ir_fields(a),
-            "effectiveHeight_m": num(a["EffectiveHeight_m"]) or 3,
-            "length_m": 20,
-            "damageEffect": a["DamageEffect"],
-            "sensors": sensors, "launchers": launchers,
-        }
+        export_aircraft(db, data, cls, table, setup_name)
+
+    # full catalogue for the scenario editor: every other class, latest setup for ships;
+    # strike aircraft with their heaviest anti-ship load, and patrol aircraft with a surface radar
+    skipped = []
+    for r in rows(db, "select DatabaseClass from ship order by DatabaseClass"):
+        cls = r["DatabaseClass"]
+        if cls in data["ships"]:
+            continue
+        setup_name = latest_setup(db, cls)
+        if not setup_name:
+            continue
+        try:
+            export_ship(db, data, cls, setup_name)
+        except Exception as e:  # incomplete database rows: skip the class, report it
+            skipped.append("%s (%s)" % (cls, e))
+    for table in ("air", "simpleair"):
+        for r in rows(db, "select DatabaseClass from %s order by DatabaseClass" % table):
+            cls = r["DatabaseClass"]
+            if cls in data["aircraft"]:
+                continue
+            try:
+                setup_name = best_strike_setup(db, cls)
+                if setup_name or has_search_radar(db, cls):
+                    export_aircraft(db, data, cls, table, setup_name)
+            except Exception as e:
+                skipped.append("%s (%s)" % (cls, e))
 
     with open(out_path, "w") as f:
-        json.dump(data, f, indent=1)
+        json.dump(data, f, separators=(",", ":"))
     for k in ("ships", "aircraft", "radars", "opticals", "missiles", "guns", "warheads", "damageEffects", "signatures"):
         print("%-14s %d" % (k, len(data[k])))
+    if skipped:
+        print("skipped %d classes with incomplete data:" % len(skipped))
+        for s in skipped:
+            print("  " + s)
 
 
 if __name__ == "__main__":
